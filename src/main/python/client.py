@@ -2,6 +2,7 @@ import socket
 import threading
 from state_parser import parse_game_state
 import numpy as np
+from openai_helpers import get_text
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
@@ -31,7 +32,7 @@ def send_message_func(sock, received_message):
     print(shared_info)
     if "autoplay" in parsed_state['available_commands']:
         response = "autoplay"
-    else:
+    elif False:
         all_options = parsed_state['available_commands']
         # Randomly choose an option
         chosen_option = np.random.choice(all_options)
@@ -39,6 +40,12 @@ def send_message_func(sock, received_message):
         if chosen_option == "choose":
             chosen_option = "choose " + str(np.random.randint(0, len(parsed_state['game_state']['choice_list'])))
         response = chosen_option
+    else:
+        # Control via GPT
+        gpt_response = get_text(parsed_state).choices[0].message.content
+        print("Gpt response: ", gpt_response)
+        # From the GPT response, get the command text within triple quotes
+        response = gpt_response.split('```')[1].split('```')[0]
     #else:
         # Placeholder function: respond based on user input for now
     #    response = input("Response: ") #input(f"Received: {received_message}\nYour response: ")

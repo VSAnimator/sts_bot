@@ -81,4 +81,4 @@ Opt for events offering significant rewards with minimal risk.
 Avoid events that can lead to severe penalties or curses unless manageable.
 Use this strategy to make informed and optimal metagame decisions, ensuring the deck is powerful and prepared for progressively harder encounters in Slay the Spire.
 
-First analyze the game state, then the current game priorities. Then analyze the available options, and return one of the options in 'available commands'. If using the command 'choose', also append the text of the particular choice from 'choice_list' within 'game_state'. Follow the exact text in 'available_commands' and 'choice_list'.
+First analyze the game state, then the current game priorities. Then analyze the available options, and return one of the options in 'available commands'. If using the command 'choose', also append the index of the particular choice from 'choice_list' within 'game_state'. Follow the exact text in 'available_commands' and 'choice_list'. Examples: ```choose 0``` or ```proceed```.
