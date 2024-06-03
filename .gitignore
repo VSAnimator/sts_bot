@@ -32,3 +32,6 @@ BattleAiMod.iml
 target/
 dependency-reduced-pom.xml
 CommunicationModExtension.iml
+
+# python
+*.pyc
