@@ -1,0 +1,5 @@
+You are analyzing a game log from the game SlayTheSpire, where an intelligent AI bot makes metagame decisions, and a monte carlo tree search handles the actual battles. Your goal is to identify key metagame decisions that led to the final outcome of the playthrough. 
+
+The final state of the playthrough: INSERT
+
+State the outcome of the playthrough, the relevance of the current decision to the outcome, then evaluate the quality of the decision. Be very concise, and return the following: an rating of the decision (1 for good, 0 for neutral, -1 for bad), and the best action that could have been taken.  Return in the form [rating, best_action]. Don't give 1 unless clearly better than other options, and don't give -1 unless clearly worse than other options. Note that for card choices, skip is always an option that should be considered.
