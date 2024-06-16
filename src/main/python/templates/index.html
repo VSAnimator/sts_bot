@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slay the Spire State Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 80%; margin: auto; }
+        h1, h2 { text-align: center; }
+        .section { margin: 20px 0; }
+        .list { display: flex; flex-wrap: wrap; }
+        .list-item { margin: 5px 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .highlight-blue { background-color: lightblue; }
+        .highlight-red { background-color: lightcoral; }
+        .highlight-green { background-color: lightgreen; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Slay the Spire State Viewer</h1>
+        <div class="section">
+            <label for="timestampInput">Enter timestamp:</label>
+            <input type="text" id="timestampInput">
+            <button onclick="loadStates()">Load Trajectory</button>
+        </div>
+        
+        <div class="section">
+            <label for="stepInput">Enter step id:</label>
+            <input type="number" id="stepInput" value="0" min="0">
+            <button onclick="displayState()">Display State</button>
+        </div>        
+
+        <div class="section">
+            <h2>Key Information</h2>
+            <p><strong>Class:</strong> <span id="class">N/A</span></p>
+            <p><strong>Ascension Level:</strong> <span id="ascension_level">N/A</span></p>
+            <p><strong>Current HP:</strong> <span id="current_hp">N/A</span> / <span id="max_hp">N/A</span></p>
+            <p><strong>Gold:</strong> <span id="gold">N/A</span></p>
+            <p><strong>Floor:</strong> <span id="floor">N/A</span></p>
+            <p><strong>Act Boss:</strong> <span id="act_boss">N/A</span></p>
+        </div>
+
+        <div class="section">
+            <h2>Available Commands</h2>
+            <div class="list" id="available_commands"></div>
+        </div>
+
+        <div class="section">
+            <h2>Choice List</h2>
+            <div class="list" id="choice_list"></div>
+        </div>
+
+        <div class="section">
+            <h2>Deck</h2>
+            <div class="list" id="deck"></div>
+        </div>
+
+        <div class="section">
+            <h2>Relics</h2>
+            <div class="list" id="relics"></div>
+        </div>
+
+        <div class="section">
+            <h2>Potions</h2>
+            <div class="list" id="potions"></div>
+        </div>
+    </div>
+
+    <script>
+        let allStates = [];
+        function loadStates() {
+            const timestamp = document.getElementById('timestampInput').value;
+            fetch(`/get_states?timestamp=${timestamp}`)
+                .then(response => response.json())
+                .then(states => {
+                    if (states.error) {
+                        alert(states.error);
+                    } else {
+                        allStates = states;
+                        alert("Trajectory loaded. Enter a step id to display a specific state.");
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function displayState() {
+            const stepId = parseInt(document.getElementById('stepInput').value);
+            if (stepId >= 0 && stepId < allStates.length) {
+                const state = allStates[stepId];
+                const botAction = state.bot_response ? state.bot_response.split(' ') : null;
+                const botCommand = botAction ? botAction[0] : null;
+                const botChoice = botAction ? botAction.slice(1).join(' ') : null;
+                //const analysis = state.analysis ? JSON.parse(state.analysis) : null;
+                const bestAction = state.best_action ? state.best_action.split(' ') : null;
+                const bestCommand = bestAction ? bestAction[0] : null;
+                var bestChoice = bestAction ? bestAction.slice(1).join(' ') : null;
+                bestChoice = bestCommand === "choose" ? bestChoice : state.best_action;
+                const rating = parseInt(state.rating ? state.rating : 0);
+
+                // Update key information
+                document.getElementById('class').textContent = state.game_state_class;
+                document.getElementById('ascension_level').textContent = state.game_state_ascension_level;
+                document.getElementById('current_hp').textContent = state.game_state_current_hp;
+                document.getElementById('max_hp').textContent = state.game_state_max_hp;
+                document.getElementById('gold').textContent = state.game_state_gold;
+                document.getElementById('floor').textContent = state.game_state_floor;
+                document.getElementById('act_boss').textContent = state.game_state_act_boss;
+
+                // Update available commands
+                const availableCommands = document.getElementById('available_commands');
+                availableCommands.innerHTML = '';
+                try {
+                    const commands = JSON.parse(state.available_commands.replace(/'/g, '"'));
+                    commands.forEach(command => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        if (command === botCommand) {
+                            if (rating === -1) {
+                                div.classList.add('highlight-red');
+                            } else if (rating === 0) {
+                                div.classList.add('highlight-blue');
+                            } else if (rating === 1) {
+                                div.classList.add('highlight-green');
+                            }
+                        }
+                        if (command === bestCommand && command !== botCommand) {
+                            div.classList.add('highlight-green');
+                        }
+                        div.textContent = command;
+                        availableCommands.appendChild(div);
+                    });
+                } catch (e) {
+                    console.error("Error parsing available commands:", e);
+                }
+
+                // Update choice list
+                const choiceList = document.getElementById('choice_list');
+                choiceList.innerHTML = '';
+                try {
+                    const choices = JSON.parse(state.game_state_choice_list.replace(/'/g, '"'));
+                    choices.forEach(choice => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        if (choice.toLowerCase() === botChoice) {
+                            if (rating === -1) {
+                                div.classList.add('highlight-red');
+                            } else if (rating === 0) {
+                                div.classList.add('highlight-blue');
+                            } else if (rating === 1) {
+                                div.classList.add('highlight-green');
+                            }
+                        }
+                        if (choice.toLowerCase() === bestChoice && choice.toLowerCase() !== botChoice) {
+                            div.classList.add('highlight-green');
+                        }
+                        div.textContent = choice;
+                        choiceList.appendChild(div);
+                    });
+                } catch (e) {
+                    console.error("Error parsing choice list:", e);
+                }
+
+                // Update deck
+                const deck = document.getElementById('deck');
+                deck.innerHTML = '';
+                try {
+                    const deckCards = JSON.parse(state.game_state_deck.replace(/'/g, '"'));
+                    deckCards.forEach(card => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.textContent = card;
+                        deck.appendChild(div);
+                    });
+                } catch (e) {
+                    console.error("Error parsing deck:", e);
+                }
+
+                // Update relics
+                const relics = document.getElementById('relics');
+                relics.innerHTML = '';
+                try {
+                    const relicItems = JSON.parse(state.game_state_relics.replace(/'/g, '"'));
+                    relicItems.forEach(relic => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.textContent = relic;
+                        relics.appendChild(div);
+                    });
+                } catch (e) {
+                    console.error("Error parsing relics:", e);
+                }
+
+                // Update potions
+                const potions = document.getElementById('potions');
+                potions.innerHTML = '';
+                try {
+                    const potionItems = JSON.parse(state.game_state_potions.replace(/'/g, '"'));
+                    potionItems.forEach(potion => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.textContent = potion;
+                        potions.appendChild(div);
+                    });
+                } catch (e) {
+                    console.error("Error parsing potions:", e);
+                }
+            } else {
+                alert("Invalid step id. Please enter a value between 0 and " + (allStates.length - 1));
+            }
+        }
+    </script>
+</body>
+</html>
