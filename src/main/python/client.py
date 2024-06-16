@@ -16,20 +16,16 @@ def receive_messages(sock, send_message_func):
     log_file = open("runs/" + str(time.time()) + ".txt", "w")
     raw_log_file = open("runs_raw/" + str(time.time()) + ".txt", "w")
     while True:
-        try:
-            msg_length = sock.recv(4)
-            if not msg_length:
-                break
+        msg_length = sock.recv(4)
+        if not msg_length:
+            break
 
-            msg_length = int.from_bytes(msg_length, byteorder='big')
-            message = sock.recv(msg_length).decode('utf-8')
-            if message:
-                print(message)
-                send_message_func(sock, message, log_file, raw_log_file)
-            else:
-                break
-        except Exception as e:
-            print(f"Error: {e}")
+        msg_length = int.from_bytes(msg_length, byteorder='big')
+        message = sock.recv(msg_length).decode('utf-8')
+        if message:
+            print(message)
+            send_message_func(sock, message, log_file, raw_log_file)
+        else:
             break
 
 last_response = "N/A (start of game)"
@@ -112,9 +108,12 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             gpt_response = get_text(parsed_state).choices[0].message.content
             print("Gpt response: ", gpt_response)
             # From the GPT response, get the command text within triple quotes
-            response = gpt_response.split('```')[-2].split('```')[0]
-            # Remove the newline character at the end
-            response = response.strip()
+            try:
+                response = gpt_response.split('```')[-2].split('```')[0]
+                # Remove the newline character at the end
+                response = response.strip()
+            except Exception as e:
+                response = "choose 0"
             # For choose commands, make sure the int is in range
             if "choose" in response:
                 try:
@@ -139,6 +138,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
     sock.sendall(encoded_message)
     last_response = response
     # Write response to log
+    print("About to write to log: ", response)
     raw_log_file.write(f'Response: {response}\n')
 
 def main():
@@ -146,7 +146,7 @@ def main():
     sock.connect((HOST_IP, PORT))
 
     # Send the initial message
-    initial_message = "start ironclad 11"
+    initial_message = "start ironclad"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

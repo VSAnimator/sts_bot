@@ -1,6 +1,7 @@
 from openai import OpenAI
+import json
 
-filename = "1718348700.830403"
+filename = "1718306208.303196"
 
 client = OpenAI()
 
@@ -62,8 +63,10 @@ for i in range(len(trajectory) - 1):
             tool_choice="required"
         )
         print("Response: ", response.choices[0].message.tool_calls[0].function.arguments)
-        split_response = str(response.choices[0].message.tool_calls[0].function.arguments)
-        write_file.write(split_response + "\n")
+        #split_response = json.dumps(response.choices[0].message.tool_calls[0].function.arguments)
+        # Strip all newline chars from response
+        stripped_response = str(response.choices[0].message.tool_calls[0].function.arguments).replace("\n", "")
+        write_file.write(stripped_response + "\n")
     except Exception as e:
         print("Exception: ", e)
         write_file.write("Failed to get text.\n")

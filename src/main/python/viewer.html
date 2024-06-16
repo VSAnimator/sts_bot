@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slay the Spire State Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 80%; margin: auto; }
+        h1, h2 { text-align: center; }
+        .section { margin: 20px 0; }
+        .list { display: flex; flex-wrap: wrap; }
+        .list-item { margin: 5px 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .highlight-blue { background-color: lightblue; }
+        .highlight-red { background-color: lightcoral; }
+        .highlight-green { background-color: lightgreen; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Slay the Spire State Viewer</h1>
+        <div class="section">
+            <label for="fileInput">Select a state file:</label>
+            <input type="file" id="fileInput">
+        </div>
+
+        <div class="section">
+            <h2>Key Information</h2>
+            <p><strong>Class:</strong> <span id="class">N/A</span></p>
+            <p><strong>Ascension Level:</strong> <span id="ascension_level">N/A</span></p>
+            <p><strong>Current HP:</strong> <span id="current_hp">N/A</span> / <span id="max_hp">N/A</span></p>
+            <p><strong>Gold:</strong> <span id="gold">N/A</span></p>
+            <p><strong>Floor:</strong> <span id="floor">N/A</span></p>
+            <p><strong>Act Boss:</strong> <span id="act_boss">N/A</span></p>
+        </div>
+
+        <div class="section">
+            <h2>Available Commands</h2>
+            <div class="list" id="available_commands"></div>
+        </div>
+
+        <div class="section">
+            <h2>Choice List</h2>
+            <div class="list" id="choice_list"></div>
+        </div>
+
+        <div class="section">
+            <h2>Deck</h2>
+            <div class="list" id="deck"></div>
+        </div>
+
+        <div class="section">
+            <h2>Relics</h2>
+            <div class="list" id="relics"></div>
+        </div>
+
+        <div class="section">
+            <h2>Potions</h2>
+            <div class="list" id="potions"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const state = JSON.parse(content);
+                    const botAction = state.bot_action ? state.bot_action.split(' ') : null;
+                    const botCommand = botAction ? botAction[0] : null;
+                    const botChoice = botAction ? botAction.slice(1).join(' ') : null;
+                    const analysis = state.analysis;
+                    const bestAction = analysis ? analysis.best_action.split(' ') : null;
+                    const bestCommand = bestAction ? bestAction[0] : null;
+                    const bestChoice = bestAction ? bestAction.slice(1).join(' ') : null;
+                    const rating = parseInt(analysis ? analysis.rating : 0);
+
+                    // Update key information
+                    document.getElementById('class').textContent = state.game_state.class;
+                    document.getElementById('ascension_level').textContent = state.game_state.ascension_level;
+                    document.getElementById('current_hp').textContent = state.game_state.current_hp;
+                    document.getElementById('max_hp').textContent = state.game_state.max_hp;
+                    document.getElementById('gold').textContent = state.game_state.gold;
+                    document.getElementById('floor').textContent = state.game_state.floor;
+                    document.getElementById('act_boss').textContent = state.game_state.act_boss;
+
+                    // Update available commands
+                    const availableCommands = document.getElementById('available_commands');
+                    availableCommands.innerHTML = '';
+                    state.available_commands.forEach(command => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        if (command === botCommand) {
+                            if (rating === -1) {
+                                div.classList.add('highlight-red');
+                            } else if (rating === 0) {
+                                div.classList.add('highlight-blue');
+                            } else if (rating === 1) {
+                                div.classList.add('highlight-green');
+                            }
+                        }
+                        if (command === bestCommand && command !== botCommand) {
+                            div.classList.add('highlight-green');
+                        }
+                        div.textContent = command;
+                        availableCommands.appendChild(div);
+                    });
+
+                    // Update choice list
+                    const choiceList = document.getElementById('choice_list');
+                    choiceList.innerHTML = '';
+                    state.game_state.choice_list.forEach(choice => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        if (choice.toLowerCase() === botChoice) {
+                            if (rating === -1) {
+                                div.classList.add('highlight-red');
+                            } else if (rating === 0) {
+                                div.classList.add('highlight-blue');
+                            } else if (rating === 1) {
+                                div.classList.add('highlight-green');
+                            }
+                        }
+                        if (choice.toLowerCase() === bestChoice && choice.toLowerCase() !== botChoice) {
+                            div.classList.add('highlight-green');
+                        }
+                        div.textContent = choice;
+                        choiceList.appendChild(div);
+                    });
+                    
+                    // Update deck
+                    const deck = document.getElementById('deck');
+                    deck.innerHTML = '';
+                    state.game_state.deck.forEach(card => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.textContent = card;
+                        deck.appendChild(div);
+                    });
+
+                    // Update relics
+                    const relics = document.getElementById('relics');
+                    relics.innerHTML = '';
+                    state.game_state.relics.forEach(relic => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.textContent = relic;
+                        relics.appendChild(div);
+                    });
+
+                    // Update potions
+                    const potions = document.getElementById('potions');
+                    potions.innerHTML = '';
+                    state.game_state.potions.forEach(potion => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item';
+                        div.textContent = potion;
+                        potions.appendChild(div);
+                    });
+                };
+                reader.readAsText(file);
+            }
+        });
+    </script>
+</body>
+</html>
