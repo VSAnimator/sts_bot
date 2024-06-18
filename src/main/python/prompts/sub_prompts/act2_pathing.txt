@@ -1,0 +1,6 @@
+Pathing decisions:
+- Aim to fight 2 or 3 elites
+- Prefer fighting elites later, especially after a camp fire
+- Always prefer a campfire over a combat or event
+- Do not fight an elite if your HP is low or if your deck doesn't have enough damage
+- The first 2 combats are from the "easy pool".  Further combats are from the "hard pool".  Prioritize easy pool fights, but delay hard pool fights until you have more damage.
