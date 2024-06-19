@@ -69,6 +69,8 @@ def get_text_v2(prompt, session_id):
                 custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_upgrades.txt"
             else:
                 custom_file_name = None
+        elif screen_type == "EVENT" and prompt['game_state']['screen_state']['event_id'] == "Neow Event":
+            custom_file_name = "prompts/sub_prompts/neow.txt"
         else:
             custom_file_name = None
         if custom_file_name:
