@@ -30,9 +30,13 @@ def receive_messages(sock, send_message_func):
             break
 
 last_response = "N/A (start of game)"
+act_combats_completed = 0
+curr_act = 1
 
 def send_message_func(sock, received_message, log_file, raw_log_file):
     global last_response
+    global act_combats_completed
+    global curr_act
     # Try parsing game state
     parsed_state, shared_info = parse_game_state('{"' + received_message)
     print(parsed_state)
@@ -44,8 +48,14 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
     # Write the parsed state to log file, and the raw message to raw log file
     log_file.write(str(parsed_state) + "\n")
     raw_log_file.write(received_message + "\n")
+    parsed_state['act_combats_completed'] = act_combats_completed # This is valuable information for the bot
     if "autoplay" in parsed_state['available_commands']:
         response = "autoplay"
+        act_combats_completed += 1
+        # If act > curr_act, reset act_combats_completed
+        if parsed_state['game_state']['act'] > curr_act:
+            curr_act = parsed_state['game_state']['act']
+            act_combats_completed = 0
     elif False:
         all_options = parsed_state['available_commands']
         # Randomly choose an option
@@ -102,11 +112,9 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         if gpt:
             parsed_state['last_command'] = last_response
             try:
-                gpt_response = get_text_v2(parsed_state)#.choices[0].message.content
-                print("Gpt response: ", gpt_response)
-                response = gpt_response.choices[0].message.tool_calls[0].function.arguments
-                response = ast.literal_eval(response)
-                response = response['chosen_action']
+                # Get time from log file name
+                time_str = log_file.name.split('/')[-1].split('.')[0]
+                response = get_text_v2(parsed_state, time_str)
             except Exception as e:
                 print("Exception: ", e)
                 response = parsed_state['available_commands'][0]
@@ -129,7 +137,7 @@ def main():
     sock.connect((HOST_IP, PORT))
 
     # Send the initial message
-    initial_message = "start ironclad 13"
+    initial_message = "start ironclad"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

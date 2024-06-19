@@ -1,5 +1,24 @@
 import json
 
+# Helper function to find a node by its coordinates
+def find_node(x, y, map_data):
+    for node in map_data:
+        if node['x'] == x and node['y'] == y:
+            return node
+    return None
+
+# Function to get the linear path until the next branching point
+def get_path_until_branch(x, y, map_data):
+    path = []
+    current_node = find_node(x, y, map_data)
+    while current_node and len(current_node['children']) == 1:
+        path.append(current_node)
+        x, y = current_node['children'][0]['x'], current_node['children'][0]['y']
+        current_node = find_node(x, y, map_data)
+    if current_node:
+        path.append(current_node)
+    return path
+
 def parse_game_state(game_state_json):
     game_state = json.loads(game_state_json)
     
@@ -41,6 +60,17 @@ def parse_game_state(game_state_json):
         parsed_state['battle_log'] = game_state['battle_log']
     else:
         print("No battle log")
+
+    # If "next_nodes" in "screen_state", we will expand them out using "get_path_until_branch"
+    if 'next_nodes' in parsed_state['game_state']['screen_state']:
+        print("Expanding next nodes")
+        next_nodes = parsed_state['game_state']['screen_state']['next_nodes']
+        expanded_next_nodes = {}
+        for start in next_nodes:
+            curr_path = get_path_until_branch(start['x'], start['y'], game_state['game_state']['map'])
+            expanded_next_nodes["x=" + str(start['x'])] = str.join("",[node['symbol'] for node in curr_path])
+        print("Expanded next nodes", expanded_next_nodes)
+        parsed_state['game_state']['screen_state']['expanded_next_nodes'] = expanded_next_nodes
 
     # Shared information dictionaries
     card_info = {generate_card_key(card): card for card in game_state['game_state'].get('deck', [])}

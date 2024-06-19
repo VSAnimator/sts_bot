@@ -4,3 +4,4 @@ Pathing decisions:
 - Always prefer a campfire over a combat or event
 - Do not fight an elite if your HP is low or if your deck doesn't have enough damage
 - The first 2 combats are from the "easy pool".  Further combats are from the "hard pool".  Prioritize easy pool fights, but delay hard pool fights until you have more damage.
+- If floor>40 and gold>300, heavily prioritize choosing a shop

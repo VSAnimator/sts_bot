@@ -1,7 +1,8 @@
 from openai import OpenAI
 import json
-
-client = OpenAI()
+import numpy as np
+import ast
+import os
 
 # Read the system prompt from the file system.txt
 with open('prompts/system.txt', 'r') as file:
@@ -29,7 +30,16 @@ def get_text(prompt):
         print("Exception: ", e)
         raise Exception("Failed to get text.")
 
-def get_text_v2(prompt):
+def get_text_v2(prompt, session_id):
+    # Set up the client with helicone logging
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"{session_id}"
+        }
+    )
+
     try:
         # Get the valid options out of the prompt
         all_options = prompt['available_commands']
@@ -55,12 +65,17 @@ def get_text_v2(prompt):
         elif screen_type == "MAP":
             custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_pathing.txt"
         elif screen_type == "GRID":
-            custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_upgrades.txt"
+            if prompt['game_state']['screen_state']['for_upgrade'] == True:
+                custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_upgrades.txt"
+            else:
+                custom_file_name = None
         else:
             custom_file_name = None
         if custom_file_name:
             with open(custom_file_name, 'r') as file:
                 custom_prompt = file.read()
+            if screen_type == "MAP":
+                custom_prompt = custom_prompt + "\n" + "For each pathing option, 'expanded_next_nodes' contains a condensed representation of all the nodes you will have to visit before the next pathing decision. Use this to help decide which path to take." 
             system_prompt_custom = system_prompt_v2.replace('INSERT', custom_prompt)
         else:
             system_prompt_custom = system_prompt_v2.replace('INSERT', "")
@@ -95,16 +110,28 @@ def get_text_v2(prompt):
 
         print("System prompt: ", system_prompt_custom)
 
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": [{"type": "text", "text": system_prompt_custom}]},
-                {"role": "user", "content": [{"type": "text", "text": prompt}]}
-            ],
-            tools=tools,
-            tool_choice="required"
-        )
-        return response
+        for i in range(3):
+            if i > 0:
+                print("Retrying...")
+            gpt_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": [{"type": "text", "text": system_prompt_custom}]},
+                    {"role": "user", "content": [{"type": "text", "text": prompt}]}
+                ],
+                tools=tools,
+                tool_choice="required"
+            )
+            print("Gpt response: ", gpt_response)
+            # Check that it's valid
+            response = gpt_response.choices[0].message.tool_calls[0].function.arguments
+            response = ast.literal_eval(response)
+            response = response['chosen_action']
+            if response in all_options:
+                return response
+        # Set the response to something random from the available commands
+        return np.random.choice(all_options)
     except Exception as e:
         print("Exception: ", e)
+        print("Sad")
         raise Exception("Failed to get text.")
