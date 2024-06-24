@@ -19,57 +19,60 @@ exception_count = 0
 
 def receive_messages(sock, send_message_func):
     global exception_count
-    log_filename = f"runs/{time.time()}.txt"
-    raw_log_filename = f"runs_raw/{time.time()}.txt"
+    while True:
+        log_filename = f"runs/{time.time()}.txt"
+        raw_log_filename = f"runs_raw/{time.time()}.txt"
 
-    with open(log_filename, "w") as log_file, open(raw_log_filename, "w") as raw_log_file:
-        last_activity_time = time.time()
+        with open(log_filename, "w") as log_file, open(raw_log_filename, "w") as raw_log_file:
+            last_activity_time = time.time()
 
-        while True:
-            try:
-                current_time = time.time()
+            new_run = False
+            while not new_run:
+                try:
+                    current_time = time.time()
 
-                # Check if we have exceeded the timeout threshold
-                if current_time - last_activity_time > TIMEOUT_THRESHOLD:
-                    print("No activity for 5 minutes. Exiting.")
-                    break
+                    # Check if we have exceeded the timeout threshold
+                    if current_time - last_activity_time > TIMEOUT_THRESHOLD:
+                        print("No activity for 5 minutes. Exiting.")
+                        return
 
-                # Use select to handle socket operations with a timeout
-                read_sockets, _, _ = select.select([sock], [], [], 1.0)
+                    # Use select to handle socket operations with a timeout
+                    read_sockets, _, _ = select.select([sock], [], [], 1.0)
 
-                if read_sockets:
-                    msg_length = sock.recv(4)
-                    if msg_length:
-                        msg_length = int.from_bytes(msg_length, byteorder='big')
-                        message = sock.recv(msg_length).decode('utf-8')
-                        if message:
-                            print(message)
-                            send_message_func(sock, message, log_file, raw_log_file)
-                            last_activity_time = current_time  # Update last activity time
+                    if read_sockets:
+                        msg_length = sock.recv(4)
+                        if msg_length:
+                            msg_length = int.from_bytes(msg_length, byteorder='big')
+                            message = sock.recv(msg_length).decode('utf-8')
+                            if message:
+                                print(message)
+                                send_message_func(sock, message, log_file, raw_log_file)
+                                last_activity_time = current_time  # Update last activity time
+                            else:
+                                print("Empty message received. Exiting.")
+                                return
                         else:
-                            print("Empty message received. Exiting.")
-                            break
-                    else:
-                        print("No message length received. Exiting.")
-                        break
-                exception_count = 0
+                            print("No message length received. Exiting.")
+                            return
+                    exception_count = 0
 
-            except Exception as e:
-                print(f"Exception in receive_messages: {e}")
-                # Send a message with the content "state" to the server
-                # Then continue
-                exception_count += 1
-                state_message = "state"
-                if exception_count == 5:
-                    # Maybe we just need to start a new game
-                    state_message = "start ironclad"
-                encoded_state_message = state_message.encode('utf-8')
-                sock.sendall(len(encoded_state_message).to_bytes(4, byteorder='big'))
-                sock.sendall(encoded_state_message)
-                print("Sent state message.")
-                if exception_count >= 10:
-                    print("Too many exceptions. Exiting.")
-                    break
+                except Exception as e:
+                    print(f"Exception in receive_messages: {e}")
+                    # Send a message with the content "state" to the server
+                    # Then continue
+                    exception_count += 1
+                    state_message = "state"
+                    if exception_count == 5:
+                        # Maybe we just need to start a new game
+                        state_message = "start ironclad 10"
+                        new_run = True
+                    encoded_state_message = state_message.encode('utf-8')
+                    sock.sendall(len(encoded_state_message).to_bytes(4, byteorder='big'))
+                    sock.sendall(encoded_state_message)
+                    print("Sent state message.")
+                    if exception_count >= 10:
+                        print("Too many exceptions. Exiting.")
+                        return
 
 last_response = "N/A (start of game)"
 act_combats_completed = 0
@@ -189,7 +192,7 @@ def main():
         return
 
     # Send the initial message
-    initial_message = "start ironclad"
+    initial_message = "start ironclad 10"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

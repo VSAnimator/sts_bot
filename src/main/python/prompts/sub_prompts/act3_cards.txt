@@ -4,6 +4,5 @@ Card decisions:
 - Take cards to have a mix of damage, block and scaling
 - Make sure you take cards later in the act to fight the act boss.  Different bosses pose different challenges.
 - Do not take bad cards.  Very strongly consider skipping cards.
-- Generally good cards to pick: Reaper, Feed, Pommel Strike,  Impervious, Offering
 - Strongly consider Ironclad's general synergies: (1) Strength gain + playing lots of attacks and attack with multiple hits and (2) exhaust synergies with powerful powers
 - Consider Ironclad's defense synergies: Cards that synergize with block: Juggernaut and body slam to do damage and entrench to double block.  Cards to gain block: feel no pain and exhaust cards to gain block, impervious, shrug it off

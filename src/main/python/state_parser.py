@@ -19,7 +19,21 @@ def get_path_until_branch(x, y, map_data):
         path.append(current_node)
     return path
 
+# Load cards and relics from info folder JSON files
+colorless_card_info = json.load(open("info/colorless_cards.json"))
+curse_card_info = json.load(open("info/curse_cards.json"))
+ironclad_card_info = json.load(open("info/ironclad_cards.json"))
+# Combine all card info into one dictionary
+ironclad_card_info.update(colorless_card_info)
+ironclad_card_info.update(curse_card_info)
+# Load relic info
+relic_info = json.load(open("info/relics.json"))
+# Make all keys in both dicts lowercase
+ironclad_card_info = {key.lower(): value for key, value in ironclad_card_info.items()}
+relic_info = {key.lower(): value for key, value in relic_info.items()}
+
 def parse_game_state(game_state_json):
+    global ironclad_card_info, relic_info
     game_state = json.loads(game_state_json)
     
     if not game_state.get('in_game'):
@@ -71,6 +85,16 @@ def parse_game_state(game_state_json):
             expanded_next_nodes["x=" + str(start['x'])] = str.join("",[node['symbol'] for node in curr_path])
         print("Expanded next nodes", expanded_next_nodes)
         parsed_state['game_state']['screen_state']['expanded_next_nodes'] = expanded_next_nodes
+
+    # For the choice list, if the elemnts are "card" or "relic", add the card or relic info to "choice_info" field in parsed_state
+    choice_info = {}
+    for i, choice in enumerate(parsed_state['game_state']['choice_list']):
+        print("Choice", choice)
+        if choice in ironclad_card_info:
+            choice_info[choice] = ironclad_card_info[choice]['effect']
+        elif choice in relic_info:
+            choice_info[choice] = relic_info[choice]['effect']
+    parsed_state['game_state']['choice_info'] = choice_info
 
     # Shared information dictionaries
     card_info = {generate_card_key(card): card for card in game_state['game_state'].get('deck', [])}
