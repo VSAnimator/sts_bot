@@ -61,7 +61,7 @@ def process_event(event, play_id):
 
         for event_choice in event["event_choices"]:
             if event_choice["floor"] == floor:
-                state["actions_taken"].append(f"Event: {event_choice['event_name']}")
+                state["actions_taken"].append(f"Event: {event_choice['event_name']}, Player choice: {event_choice['player_choice']}")
                 if "cards_obtained" in event_choice:
                     current_deck.extend(event_choice["cards_obtained"])
                 if "cards_removed" in event_choice:

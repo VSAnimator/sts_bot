@@ -1,8 +1,7 @@
 Merchant decisions:
 - Always buy the Membership Card relic if your gold is at least 2x its cost
 - Remove strikes
-- Buy only very powerful cards
-- Buy cards if needed to fight elites or the act boss, particularly damage cards
+- Typically don't buy cards, only buy if very powerful
 - Only buy the following potions: blood potion, fairy in a bottle, fruit juice
 - Prioritize the following relics: Anchor, Bag of Preparation, Lantern, Vajra, Red Skull, Meat on the Bone, Self-Forming Clay, Dead Branch, Gambling Chip, Magic Flower
 - Buy other relics that synergize with your deck

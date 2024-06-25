@@ -112,6 +112,9 @@ def get_text_v2(prompt, session_id):
 
         print("System prompt: ", system_prompt_custom)
 
+        # Temporary test
+        #system_prompt_custom = system_prompt
+
         for i in range(3):
             if i > 0:
                 print("Retrying...")
