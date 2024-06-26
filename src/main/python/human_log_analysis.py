@@ -22,7 +22,7 @@ def process_event(event, play_id):
             "potions": json.dumps(current_potions.copy()),
             "current_hp": event["current_hp_per_floor"][0] if event["current_hp_per_floor"] else 0,
             "max_hp": event["max_hp_per_floor"][0] if event["max_hp_per_floor"] else 0,
-            "actions_taken": json.dumps([f"Neow Bonus: {event['neow_bonus']}"]),
+            "actions_taken": json.dumps([f"Neow Event: {event['neow_bonus']}"]),
             "ascension_level": ascension_level
         })
     except Exception as e:
@@ -127,13 +127,24 @@ def process_event(event, play_id):
                 #print(event["path_per_floor"])
                 #print(event["path_taken"])
                 path = event["path_per_floor"][floor]
-                #print("Path: ", path)
+                # Want to include up to 3 steps of the path where possible
+                #print("Path per floor: ", event["path_per_floor"])
+                #print("path", path)
+                if path is not None:
+                    offset = 1
+                    while floor + offset < len(event["path_per_floor"]) and len(path) < 3:
+                        if event["path_per_floor"][floor + offset] is None:
+                            break
+                        path = path + event["path_per_floor"][floor + offset]
+                        offset += 1
+                        #print("Path: ", path)
                 state["actions_taken"].append(f"Path taken: {path}")
-                if floor == 49:
-                    print("Path: ", path)
+                #if floor == 49:
+                #    print("Path: ", path)
         except Exception as e:
             print("Error in pathing decisions")
             print("Event: ", event)
+            print("Exception", e)
             print(floor)
             print(event["path_per_floor"])
 

@@ -10,7 +10,7 @@ from launch_game import start_game
 import os
 import signal
 import select
-from key_queries import similar_card_choice, campfire_choice, event_choice
+from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
@@ -65,7 +65,7 @@ def receive_messages(sock, send_message_func):
                     state_message = "state"
                     if exception_count == 5:
                         # Maybe we just need to start a new game
-                        state_message = "start ironclad 20"
+                        state_message = "start ironclad"
                         new_run = True
                     encoded_state_message = state_message.encode('utf-8')
                     sock.sendall(len(encoded_state_message).to_bytes(4, byteorder='big'))
@@ -81,6 +81,7 @@ curr_act = 1
 next_choice_card = False
 
 def send_message_func(sock, received_message, log_file, raw_log_file):
+    max_action = True
     global last_response
     global act_combats_completed
     global curr_act
@@ -160,21 +161,26 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         # If we are currently choosing between cards, route it now to the data-driven approach
         elif next_choice_card:
             # Now we are in the card choice screen
-            response, gpt = similar_card_choice(parsed_state['game_state']) # gpt variable says whether to default to GPT when not enough data.
+            response, gpt = similar_card_choice(parsed_state['game_state'], max_action) # gpt variable says whether to default to GPT when not enough data.
             next_choice_card = False
             # Wait for user input so I can analyze
             #input("Press Enter to continue...")
 
         if parsed_state['game_state']['screen_type'] == "REST" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make campfire decisions
-            response, gpt = campfire_choice(parsed_state['game_state'])
+            response, gpt = campfire_choice(parsed_state['game_state'], max_action)
             #print("Response", response, gpt)
             #input("Press Enter to continue...")
         if parsed_state['game_state']['screen_type'] == "EVENT" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make event decisions
-            response, gpt = event_choice(parsed_state['game_state'])
+            response, gpt = event_choice(parsed_state['game_state'], max_action)
             print("Response", response, gpt)
-            input("Press Enter to continue...")
+            #input("Press Enter to continue...")
+        if parsed_state['game_state']['screen_type'] == "MAP" and len(parsed_state['game_state']['choice_list']) > 1:
+            # Let's probabilistically make pathing decisions
+            response, gpt = pathing_choice(parsed_state['game_state'], max_action)
+            print("Response", response, gpt)
+            #input("Press Enter to continue...")
         # Control via GPT
         #if gpt:
         #    # Just ask the user to type the command
@@ -220,7 +226,7 @@ def main():
         return
 
     # Send the initial message
-    initial_message = "start ironclad 20"
+    initial_message = "start ironclad"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

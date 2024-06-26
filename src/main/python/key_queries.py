@@ -45,7 +45,7 @@ def calculate_similarity(state, current_state):
     return similarity
 
 # Can make this more intelligent later
-def similar_card_choice(current_state):
+def similar_card_choice(current_state, max_action):
     print("Current state:", current_state)
 
     # Connect to the database
@@ -151,9 +151,12 @@ def similar_card_choice(current_state):
 
     # Choose a card probabilistically, using the ratios as weights
     # First normalize the weights
-    total_weight = sum(card_ratios.values())
-    card_ratios = {card: ratio / total_weight for card, ratio in card_ratios.items()}
-    best_card = np.random.choice(list(card_ratios.keys()), p=list(card_ratios.values()))
+    if max_action:
+        best_card = max(card_ratios, key=card_ratios.get)
+    else:
+        total_weight = sum(card_ratios.values())
+        card_ratios = {card: ratio / total_weight for card, ratio in card_ratios.items()}
+        best_card = np.random.choice(list(card_ratios.keys()), p=list(card_ratios.values()))
 
     #best_card = max(card_ratios, key=card_ratios.get)
 
@@ -172,7 +175,7 @@ def similar_card_choice(current_state):
     
     return command, False
 
-def campfire_choice(current_state):
+def campfire_choice(current_state, max_action):
     # Connect to the database
     db_url = 'sqlite:///slay_the_spire.db'
     db = dataset.connect(db_url)
@@ -239,7 +242,10 @@ def campfire_choice(current_state):
     print("Campfire actions:", campfire_actions)
 
     # Sample from dist for decision
-    best_action = np.random.choice(list(campfire_actions.keys()), p=list(campfire_actions.values()))
+    if max_action:
+        best_action = max(campfire_actions, key=campfire_actions.get)
+    else:
+        best_action = np.random.choice(list(campfire_actions.keys()), p=list(campfire_actions.values()))
 
     # If the decision is smith, but dig is available, switch to dig
     if best_action == "smith":
@@ -251,12 +257,20 @@ def campfire_choice(current_state):
         if "purge" in current_state['choice_list']:
             best_action = "purge"
 
+    # Auto-rest conditions
+    if "rest" in current_state['choice_list']:
+        # Check if HP below 50% and rest is available
+        if current_state['current_hp'] <= current_state['max_hp'] / 2:
+            best_action = "rest"
+        if current_state['floor'] % 17 >= 15:
+            best_action = "rest"
+
     # Turn into command
     command = f"choose {best_action}"
     
     return command, False
 
-def event_choice(current_state):
+def event_choice(current_state, max_action):
     # Connect to the database
     db_url = 'sqlite:///slay_the_spire.db'
     db = dataset.connect(db_url)
@@ -318,12 +332,107 @@ def event_choice(current_state):
     event_choices = {action: count / total_actions for action, count in event_choices.items()}
     print("Event choices:", event_choices)
 
+    if len(event_choices) == 0:
+        return "No valid choices", True
+
     # Sample from dist for decision
-    best_action = np.random.choice(list(event_choices.keys()), p=list(event_choices.values()))
+    if max_action:
+        best_action = max(event_choices, key=event_choices.get)
+    else:
+        best_action = np.random.choice(list(event_choices.keys()), p=list(event_choices.values()))
 
     # Turn into command
     command = f"choose {best_action}"
     
+    return command, False
+
+def pathing_choice(current_state, max_action):
+    # Connect to the database
+    db_url = 'sqlite:///slay_the_spire.db'
+    db = dataset.connect(db_url)
+    table = db['states']
+
+    # Serialize lists to JSON strings for comparison
+    current_choice_list = current_state['choice_list']
+
+    # Also get the extended pathing options
+    extended_next_nodes = current_state['screen_state']['expanded_next_nodes']
+
+    # Now query the database for similar states
+    query = f"""
+    SELECT *
+    FROM states
+    WHERE actions_taken LIKE '%Path taken%'
+    AND floor BETWEEN {current_state['floor'] - 1} AND {current_state['floor'] + 1}
+    AND ascension_level = {current_state['ascension_level']}
+    LIMIT 500
+    """
+
+    # Execute the query
+    result = db.query(query)
+
+    # Find similar states
+    similar_states = []
+    for state in result:
+        similarity = calculate_similarity(state, current_state)
+        similar_states.append((similarity, state))
+
+    # If there are fewer than 20 similar states, return
+    print("Number of similar states:", len(similar_states))
+    if len(similar_states) < 20:
+        return "Not enough similar states", True
+    
+    # Sort by similarity
+    similar_states.sort(reverse=True, key=lambda x: x[0])
+
+    # Limit to top 20 similar states
+    top_similar_states = similar_states[:20]
+
+    # For each observed pathing choice, compare to the extended_next_nodes options
+    path_choices = Counter()
+    for _, state in top_similar_states:
+        actions_taken = json.loads(state['actions_taken'])
+        for action in actions_taken:
+            if 'Path taken' in action:
+                path_taken = action.split(": ")[1].lower()
+                # Now match path_taken to the extended_next_nodes
+                # Most similar string wins as long as one has nonzero similarity
+                # Crop both strings to the length of the smaller one, and check percentage tokens in common
+                max_similarity = 0
+                best_path = ""
+                print("Path taken:", path_taken)
+                for path_option, path_symbols in extended_next_nodes.items():
+                    # Crop path_symbols and path_taken to the length of the smaller one
+                    min_length = min(len(path_symbols), len(path_taken))
+                    cropped_path_symbols = path_symbols[:min_length].lower()
+                    cropped_path_taken = path_taken[:min_length]
+                    print("Cropped path symbols", cropped_path_symbols)
+                    similarity = sum([1 for i in range(min_length) if cropped_path_symbols[i] == cropped_path_taken[i]]) / min_length
+                    print("Similarity:", similarity)
+                    if similarity > max_similarity:
+                        max_similarity = similarity
+                        best_path = path_option
+                path_choices[best_path] += 1
+
+    # Probability dist from counter
+    total_actions = sum(path_choices.values())
+
+    path_choices = {action: count / total_actions for action, count in path_choices.items()}
+    print("Path choices:", path_choices)
+
+    # Sample from dist for decision
+    if max_action:
+        best_action = max(path_choices, key=path_choices.get)
+    else:
+        best_action = np.random.choice(list(path_choices.keys()), p=list(path_choices.values()))
+
+    # If best_action is an empty string, default to gpt
+    if best_action == "":
+        return "gpt", True
+
+    # Turn into command
+    command = f"choose {best_action}"
+
     return command, False
 
 # Test a query
