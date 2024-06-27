@@ -4,7 +4,7 @@ import time
 from state_parser import parse_game_state
 from battle_log_parser import extract_battle_info
 import numpy as np
-from openai_helpers import get_text, get_text_v2
+from openai_helpers import get_text, get_text_v2, get_text_v3
 import ast
 from launch_game import start_game
 import os
@@ -158,6 +158,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             response = "choose 0"
             gpt = False
             next_choice_card = True
+        '''
         # If we are currently choosing between cards, route it now to the data-driven approach
         elif next_choice_card:
             # Now we are in the card choice screen
@@ -181,6 +182,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             response, gpt = pathing_choice(parsed_state['game_state'], max_action)
             print("Response", response, gpt)
             #input("Press Enter to continue...")
+        '''
         # Control via GPT
         #if gpt:
         #    # Just ask the user to type the command
@@ -193,7 +195,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             try:
                 # Get time from log file name
                 time_str = log_file.name.split('/')[-1].split('.')[0]
-                response = get_text_v2(parsed_state, time_str)
+                response = get_text_v3(parsed_state, time_str)
             except Exception as e:
                 print("Exception: ", e)
                 response = parsed_state['available_commands'][0]
@@ -201,6 +203,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
                     response = 'choose 0'
             # Write response to log
             log_file.write(f'Bot response: {response}\n')
+            #input("Press Enter to continue...")
     print("Response: ", response)
     print("Last response: ", last_response)
     encoded_message = response.encode('utf-8')
