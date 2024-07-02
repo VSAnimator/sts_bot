@@ -145,7 +145,7 @@ def get_text_v2(prompt, session_id):
         print("Sad")
         raise Exception("Failed to get text.")
 
-def get_text_v3(prompt, session_id):
+def get_text_v3(prompt, session_id, similar_states):
     # Set up the client with helicone logging
     client = OpenAI(
         base_url="https://oai.hconeai.com/v1", 
@@ -165,6 +165,10 @@ def get_text_v3(prompt, session_id):
             for i in range(len(prompt['game_state']['choice_list'])):
                 prompt['game_state']['choice_list'][i] = "choose " + prompt['game_state']['choice_list'][i]
             all_options.extend(prompt['game_state']['choice_list'])
+        # For sozu, we need to remove options containing "potion" from the list of options when in the shop
+        if "sozu" in prompt['game_state']['relics'] and prompt['game_state']['screen_type'] == "SHOP_SCREEN":
+            all_options = [command for command in all_options if "potion" not in command]
+
         # Great, now these can be passed as options to the GPT tool call
         # Delete them from the state
         del prompt['available_commands']
@@ -246,7 +250,8 @@ def get_text_v3(prompt, session_id):
             # Add the response to the current_messages
             current_messages.append({"role": "system", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
             # Evaluate each of the current options
-            prompt = "Now, evaluate each of the choices available in context of the current deck and relics, considering how each choice contributes to both the short-term (defeating coming enemies) and the long-term (defeating the Act boss). Return a 1-2 sentence evaluation for each choice." + "\n" + "Choices: " + str(all_options)
+            prompt = "Now, evaluate each of the choices available in context of the current deck and relics, considering how each choice contributes to both the short-term (defeating coming enemies) and the long-term (defeating the Act boss). Return a 1-2 sentence evaluation for each choice." + "\n" + "Choices available: " + str(all_options)
+
             current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
             # Again call GPT
             gpt_response = client.chat.completions.create(
@@ -254,6 +259,18 @@ def get_text_v3(prompt, session_id):
                 messages=current_messages,
             )
             current_messages.append({"role": "system", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+
+            if similar_states:
+                # Stick the top 3 similar states in the prompt
+                prompt = "To help your decision, here are the top 5 most similar states from a database of human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
+                prompt += "\n" + "Analyze these states and compare them to the current state. What can be learned from the decisions humans made in these states? Strongly consider making choices similar to human choices from the 'actions taken' field."
+                current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+                gpt_response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=current_messages,
+                )
+                current_messages.append({"role": "system", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+
             # Chose one of the options
             prompt = "Given this evaluation, which of the choices is the best choice to take to maximize the chances of winning the run?"
             current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})

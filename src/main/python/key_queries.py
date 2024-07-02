@@ -100,7 +100,7 @@ def similar_card_choice(current_state, max_action):
     # If there are fewer than 20 similar states, return
     print("Number of similar states:", len(similar_states))
     if len(similar_states) < 50:
-        return "Not enough similar states", True
+        return "Not enough similar states", True, None
 
     # Sort by similarity
     similar_states.sort(reverse=True, key=lambda x: x[0])
@@ -173,7 +173,7 @@ def similar_card_choice(current_state, max_action):
     if best_card == "skip":
         command = "skip"
     
-    return command, False
+    return command, False, top_similar_states
 
 def campfire_choice(current_state, max_action):
     # Connect to the database
@@ -206,7 +206,7 @@ def campfire_choice(current_state, max_action):
     # If there are fewer than 20 similar states, return
     print("Number of similar states:", len(similar_states))
     if len(similar_states) < 20:
-        return "Not enough similar states", True
+        return "Not enough similar states", True, None
     
     # Sort by similarity
     similar_states.sort(reverse=True, key=lambda x: x[0])
@@ -268,7 +268,7 @@ def campfire_choice(current_state, max_action):
     # Turn into command
     command = f"choose {best_action}"
     
-    return command, False
+    return command, False, top_similar_states
 
 def event_choice(current_state, max_action):
     # Connect to the database
@@ -325,6 +325,7 @@ def event_choice(current_state, max_action):
 
     # Filter out actions that are not in the current choice list
     event_choices = {action: count for action, count in event_choices.items() if action in current_choice_list}
+    # Can relax this condition if just passing into GPT TODO
 
     # Probability dist from counter
     total_actions = sum(event_choices.values())
@@ -333,7 +334,7 @@ def event_choice(current_state, max_action):
     print("Event choices:", event_choices)
 
     if len(event_choices) == 0:
-        return "No valid choices", True
+        return "No valid choices", True, None
 
     # Sample from dist for decision
     if max_action:
@@ -344,7 +345,7 @@ def event_choice(current_state, max_action):
     # Turn into command
     command = f"choose {best_action}"
     
-    return command, False
+    return command, False, top_similar_states
 
 def pathing_choice(current_state, max_action):
     # Connect to the database
@@ -380,7 +381,7 @@ def pathing_choice(current_state, max_action):
     # If there are fewer than 20 similar states, return
     print("Number of similar states:", len(similar_states))
     if len(similar_states) < 20:
-        return "Not enough similar states", True
+        return "Not enough similar states", True, None
     
     # Sort by similarity
     similar_states.sort(reverse=True, key=lambda x: x[0])
@@ -428,12 +429,12 @@ def pathing_choice(current_state, max_action):
 
     # If best_action is an empty string, default to gpt
     if best_action == "":
-        return "gpt", True
+        return "gpt", True, None
 
     # Turn into command
     command = f"choose {best_action}"
 
-    return command, False
+    return command, False, top_similar_states
 
 # Test a query
 #command, done = similar_card_choice(current_state)

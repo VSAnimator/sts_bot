@@ -65,7 +65,7 @@ def receive_messages(sock, send_message_func):
                     state_message = "state"
                     if exception_count == 5:
                         # Maybe we just need to start a new game
-                        state_message = "start ironclad"
+                        state_message = "start ironclad 10"
                         new_run = True
                     encoded_state_message = state_message.encode('utf-8')
                     sock.sendall(len(encoded_state_message).to_bytes(4, byteorder='big'))
@@ -115,6 +115,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         response = chosen_option
     else:
         gpt = True
+        entries = None # Hold similar entries if we run sql search on events
         # First filter out potions from the available commands if no potion slots
         choice_offset = 0
         if 'potion' in parsed_state['game_state']['choice_list']: 
@@ -158,31 +159,27 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             response = "choose 0"
             gpt = False
             next_choice_card = True
-        '''
         # If we are currently choosing between cards, route it now to the data-driven approach
         elif next_choice_card:
             # Now we are in the card choice screen
-            response, gpt = similar_card_choice(parsed_state['game_state'], max_action) # gpt variable says whether to default to GPT when not enough data.
+            _, _, entries = similar_card_choice(parsed_state['game_state'], max_action) # gpt variable says whether to default to GPT when not enough data.
             next_choice_card = False
-            # Wait for user input so I can analyze
-            #input("Press Enter to continue...")
-
         if parsed_state['game_state']['screen_type'] == "REST" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make campfire decisions
-            response, gpt = campfire_choice(parsed_state['game_state'], max_action)
+            _, _, entries = campfire_choice(parsed_state['game_state'], max_action)
             #print("Response", response, gpt)
             #input("Press Enter to continue...")
         if parsed_state['game_state']['screen_type'] == "EVENT" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make event decisions
-            response, gpt = event_choice(parsed_state['game_state'], max_action)
-            print("Response", response, gpt)
+            _, _, entries = event_choice(parsed_state['game_state'], max_action)
+            #print("Response", response, gpt)
             #input("Press Enter to continue...")
         if parsed_state['game_state']['screen_type'] == "MAP" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make pathing decisions
-            response, gpt = pathing_choice(parsed_state['game_state'], max_action)
-            print("Response", response, gpt)
-            #input("Press Enter to continue...")
-        '''
+            _, _, entries = pathing_choice(parsed_state['game_state'], max_action)
+            #print("Response", response, gpt)
+            response = input("Give command...")
+            gpt = False
         # Control via GPT
         #if gpt:
         #    # Just ask the user to type the command
@@ -195,7 +192,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             try:
                 # Get time from log file name
                 time_str = log_file.name.split('/')[-1].split('.')[0]
-                response = get_text_v3(parsed_state, time_str)
+                response = get_text_v3(parsed_state, time_str, entries)
             except Exception as e:
                 print("Exception: ", e)
                 response = parsed_state['available_commands'][0]
@@ -218,7 +215,7 @@ def main():
     process_1, process_2 = start_game()
     
     # Wait 20 seconds for the game to start
-    time.sleep(30)
+    time.sleep(60)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -229,7 +226,7 @@ def main():
         return
 
     # Send the initial message
-    initial_message = "start ironclad"
+    initial_message = "state" #"start ironclad 10"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

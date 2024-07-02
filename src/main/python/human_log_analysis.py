@@ -9,6 +9,10 @@ def process_event(event, play_id):
     ascension_level = event.get("ascension_level", 0)
     print("Ascension level: ", ascension_level)
 
+    # Add ascender's bane to the deck if ascension level is 10 or higher
+    if ascension_level >= 10:
+        current_deck = ["AscendersBane"] + current_deck
+
     # Unroll trajectory information
     states = []
 
@@ -56,7 +60,7 @@ def process_event(event, play_id):
                 picked = choice["picked"]
                 not_picked = choice["not_picked"]
                 state["actions_taken"].append(f"Card picked: {picked}, Cards not picked: {', '.join(not_picked)}")
-                if picked != "SKIP":
+                if picked != "SKIP" and picked != "Singing Bowl":
                     current_deck.append(picked)
 
         for event_choice in event["event_choices"]:
@@ -96,10 +100,16 @@ def process_event(event, play_id):
             if campfire_choice["floor"] == floor:
                 if campfire_choice["key"] == "SMITH":
                     card_smithed = campfire_choice["data"]
+                    print("Card smithed: ", card_smithed)
                     # Upgrade the corresponding card in the deck
                     for i, card in enumerate(current_deck):
                         if card == card_smithed:
-                            current_deck[i] = f"{card_smithed}+1"
+                            if "+" in card:
+                                current_upgrade = int(card.split("+")[1])
+                                card_base = card.split("+")[0]
+                                current_deck[i] = f"{card_base}+{current_upgrade + 1}"
+                            else:
+                                current_deck[i] = f"{card_smithed}+1"
                             break
                     state["actions_taken"].append(f"Card smithed: {card_smithed}")
                 else:
@@ -150,6 +160,14 @@ def process_event(event, play_id):
 
         state["actions_taken"] = json.dumps(state["actions_taken"])
         states.append(state)
+
+    # Check that current_deck at end matches the master deck
+    '''
+    if set(current_deck) != set(event["master_deck"]):
+        if len(set(current_deck) - set(event["master_deck"])) > 3 or len(set(event["master_deck"]) - set(current_deck)) > 3:
+            states = []
+            #print("Too many differences, skipping")
+    '''
     return states
 
 def process_json_file(json_file, db_url):
@@ -161,26 +179,46 @@ def process_json_file(json_file, db_url):
     
     db = dataset.connect(db_url)
     table = db['states']
+
+    victory_count = 0
+    loss_count = 0
     
+    skipped_count = 0
+    entered_count = 0
+
     for entry in data:
         event = entry["event"]
         play_id = event["play_id"]
 
         try:
             # Check if the playthrough was a winning run with Ironclad
-            if event["character_chosen"] == "IRONCLAD" and event["victory"]:
-                states = process_event(event, play_id)
-                # Increment trajectory and state counts
-                trajectory_count += 1
-                state_count += len(states)
-                print("Inserting ", len(states), " states")
-                print("State count", state_count)
-                print("Trajectory count", trajectory_count)
-                table.insert_many(states)
+            if event["character_chosen"] == "IRONCLAD":
+                if event["victory"]:# or victory_count > loss_count:
+                    states = process_event(event, play_id)
+                    # Increment trajectory and state counts
+                    trajectory_count += 1
+                    state_count += len(states)
+                    if len(states) == 0:
+                        #print("Skipping event")
+                        skipped_count += 1
+                        continue
+                    entered_count += 1
+                    if event["victory"]:
+                        victory_count += 1
+                    else:
+                        loss_count += 1
+                    #print("Inserting ", len(states), " states")
+                    #print("State count", state_count)
+                    #print("Trajectory count", trajectory_count)
+                    table.insert_many(states)
         except Exception as e:
             print("Error in processing event")
             print("Event: ", event)
             print("Exception: ", e)
+
+    #print("Skipped_count", skipped_count)
+    #print("Entered_count", entered_count)
+    #input("Press Enter to continue...")
 
 # Example usage
 file_folder = '/Users/sarukkai/Downloads/Monthly_2020_11/'
