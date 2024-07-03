@@ -229,6 +229,8 @@ def campfire_choice(current_state, max_action):
                 campfire_actions[campfire_action] += 1
 
     # Filter out actions that are not in the current choice list
+    print("Unfiltered campfire actions", campfire_actions)
+    print("Choice list", current_choice_list)
     campfire_actions = {action: count for action, count in campfire_actions.items() if action in current_choice_list}
 
     # Remove recall from the list
@@ -303,7 +305,7 @@ def event_choice(current_state, max_action):
     # If there are fewer than 20 similar states, return
     print("Number of similar states:", len(similar_states))
     if len(similar_states) < 20:
-        return "Not enough similar states", True
+        return "Not enough similar states", True, None
     
     # Sort by similarity
     similar_states.sort(reverse=True, key=lambda x: x[0])

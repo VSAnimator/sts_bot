@@ -145,7 +145,7 @@ def get_text_v2(prompt, session_id):
         print("Sad")
         raise Exception("Failed to get text.")
 
-def get_text_v3(prompt, session_id, similar_states):
+def get_text_v3(prompt, session_id, similar_states, human_test=False):
     # Set up the client with helicone logging
     client = OpenAI(
         base_url="https://oai.hconeai.com/v1", 
@@ -157,27 +157,35 @@ def get_text_v3(prompt, session_id, similar_states):
 
     try:
         # Get the valid options out of the prompt
-        all_options = prompt['available_commands']
-        # If "choose" is one of the options, then "roll" the other options into the choice list
-        if "choose" in all_options:
-            all_options = [command for command in all_options if command != "choose"]
-            # For all commands in choice_list, append the word "choose " to the front
-            for i in range(len(prompt['game_state']['choice_list'])):
-                prompt['game_state']['choice_list'][i] = "choose " + prompt['game_state']['choice_list'][i]
-            all_options.extend(prompt['game_state']['choice_list'])
-        # For sozu, we need to remove options containing "potion" from the list of options when in the shop
-        if "sozu" in prompt['game_state']['relics'] and prompt['game_state']['screen_type'] == "SHOP_SCREEN":
-            all_options = [command for command in all_options if "potion" not in command]
+        if human_test:
+            all_options = prompt['available_commands']
+            del prompt['available_commands']
+            # Augment system prompt with task-specific information
+            act_id = prompt['act']
+            screen_type = prompt['screen_type']
+        else:
+            all_options = prompt['available_commands']
+            # If "choose" is one of the options, then "roll" the other options into the choice list
+            if "choose" in all_options:
+                all_options = [command for command in all_options if command != "choose"]
+                # For all commands in choice_list, append the word "choose " to the front
+                for i in range(len(prompt['game_state']['choice_list'])):
+                    prompt['game_state']['choice_list'][i] = "choose " + prompt['game_state']['choice_list'][i]
+                all_options.extend(prompt['game_state']['choice_list'])
+            # For sozu, we need to remove options containing "potion" from the list of options when in the shop
+            if "sozu" in prompt['game_state']['relics'] and prompt['game_state']['screen_type'] == "SHOP_SCREEN":
+                all_options = [command for command in all_options if "potion" not in command]
 
-        # Great, now these can be passed as options to the GPT tool call
-        # Delete them from the state
-        del prompt['available_commands']
-        del prompt['game_state']['choice_list']
-        #prompt['command_options'] = all_options # Pass it in for the first LLM call
-            
-        # Augment system prompt with task-specific information
-        act_id = prompt['game_state']['act']
-        screen_type = prompt['game_state']['screen_type']
+            # Great, now these can be passed as options to the GPT tool call
+            # Delete them from the state
+            del prompt['available_commands']
+            del prompt['game_state']['choice_list']
+            #prompt['command_options'] = all_options # Pass it in for the first LLM call
+                
+            # Augment system prompt with task-specific information
+            act_id = prompt['game_state']['act']
+            screen_type = prompt['game_state']['screen_type']
+
         if screen_type == "CARD_REWARD":
             custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_cards.txt"
         elif screen_type == "SHOP_SCREEN":
