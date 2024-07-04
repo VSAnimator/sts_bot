@@ -113,6 +113,8 @@ def similar_card_choice(current_state, max_action):
     card_available_counts = Counter()
 
     for _, state in top_similar_states:
+        if state['id'] == current_state['id']:
+            continue
         actions_taken = json.loads(state['actions_taken'])
         for action in actions_taken:
             if 'Card picked' in action:
@@ -175,6 +177,67 @@ def similar_card_choice(current_state, max_action):
     
     return command, False, top_similar_states
 
+# Can make this more intelligent later
+def boss_relic_choice(current_state, max_action):
+    print("Current state:", current_state)
+
+    # Connect to the database
+    db_url = 'sqlite:///slay_the_spire.db'
+    db = dataset.connect(db_url)
+    table = db['states']
+
+    # Serialize lists to JSON strings for comparison
+    current_choice_list = current_state['choice_list']
+
+    # Adjust the SQL query to limit the number of rows returned and match similar action spaces
+    # Has to have at least one element in common with the current_choice_list from actions_taken
+    # Modify "choice" to escape apostrophies
+    # Escape single quotes in choices
+    escaped_choices = [choice.replace("'", "''") for choice in current_choice_list]
+
+    # Create the condition string
+    choices_condition = " OR ".join(
+        [f"actions_taken LIKE '%{choice}%'" for choice in escaped_choices]
+    )
+
+    query = f"""
+    SELECT * 
+    FROM states
+    WHERE actions_taken LIKE '%Boss relic%'
+    AND ({choices_condition})
+    AND floor BETWEEN {current_state['floor'] - 2} AND {current_state['floor'] + 2}
+    AND ascension_level = {current_state['ascension_level']}
+    """
+
+    # Execute the query
+    result = db.query(query)
+
+    # Find similar states
+    similar_states = []
+    for state in result:
+        actions_taken = json.loads(state['actions_taken'])
+        #print("Actions taken:", actions_taken)
+        for action in actions_taken:
+            if 'Boss relic' in action:
+                boss_relic_action = action.split(":")[1].split(",")[0].strip().lower()
+                boss_relic_options = [boss_relic_action] + action.split(":")[-1].strip().lower().split(", ")
+                if len(set(boss_relic_options) & set(current_choice_list)) > 0:  # Check for at least one common card
+                    similarity = calculate_similarity(state, current_state)
+                    similar_states.append((similarity, state))
+
+    # If there are fewer than 20 similar states, return
+    print("Number of similar states:", len(similar_states))
+    if len(similar_states) < 20:
+        return "Not enough similar states", True, None
+
+    # Sort by similarity
+    similar_states.sort(reverse=True, key=lambda x: x[0])
+
+    # Limit to top 50 similar states
+    top_similar_states = similar_states[:50]
+
+    return None, False, top_similar_states
+
 def campfire_choice(current_state, max_action):
     # Connect to the database
     db_url = 'sqlite:///slay_the_spire.db'
@@ -191,7 +254,6 @@ def campfire_choice(current_state, max_action):
     AND abs((current_hp * 1.0 / max_hp) - ({current_state['current_hp']} * 1.0 / {current_state['max_hp']})) < 0.1
     AND floor BETWEEN {current_state['floor'] - 1} AND {current_state['floor'] + 1}
     AND ascension_level = {current_state['ascension_level']}
-    LIMIT 500
     """
 
     # Execute the query
@@ -217,9 +279,9 @@ def campfire_choice(current_state, max_action):
     # Compute the probability of each campfire action
     campfire_actions = Counter()
     for _, state in top_similar_states:
-        print(state)
+        if state['id'] == current_state['id']:
+            continue
         actions_taken = json.loads(state['actions_taken'])
-        print("Actions taken:", actions_taken)
         for action in actions_taken:
             if 'Campfire action' in action:
                 campfire_action = action.split(": ")[1].lower()
@@ -272,6 +334,84 @@ def campfire_choice(current_state, max_action):
     
     return command, False, top_similar_states
 
+def smithing_choice(current_state, max_action):
+    # Connect to the database
+    db_url = 'sqlite:///slay_the_spire.db'
+    db = dataset.connect(db_url)
+    table = db['states']
+
+    # Serialize lists to JSON strings for comparison
+    current_choice_list = current_state['choice_list']
+
+    # Let's leave this out of the query for now
+    choices_condition = " OR ".join(
+        [f"actions_taken LIKE '%{choice}%'" for choice in current_choice_list]
+    )
+
+    query = f"""
+    SELECT * 
+    FROM states
+    WHERE actions_taken LIKE '%Smithed%'
+    AND abs((current_hp * 1.0 / max_hp) - ({current_state['current_hp']} * 1.0 / {current_state['max_hp']})) < 0.1
+    AND floor BETWEEN {current_state['floor'] - 1} AND {current_state['floor'] + 1}
+    AND ascension_level = {current_state['ascension_level']}
+    """
+
+    # Execute the query
+    result = db.query(query)
+
+    # Find similar states
+    similar_states = []
+    for state in result:
+        similarity = calculate_similarity(state, current_state)
+        similar_states.append((similarity, state))
+        
+    # If there are fewer than 20 similar states, return
+    print("Number of similar states:", len(similar_states))
+    if len(similar_states) < 20:
+        return "Not enough similar states", True, None
+    
+    # Sort by similarity
+    similar_states.sort(reverse=True, key=lambda x: x[0])
+
+    # Limit to top 20 similar states
+    top_similar_states = similar_states[:50]
+
+    return None, False, top_similar_states
+
+    # Compute the probability of each campfire action
+    campfire_actions = Counter()
+    for _, state in top_similar_states:
+        if state['id'] == current_state['id']:
+            continue
+        actions_taken = json.loads(state['actions_taken'])
+        for action in actions_taken:
+            if "Card smithed" in action:
+                campfire_action = action.split(": ")[1].lower()
+                campfire_actions[campfire_action] += 1
+
+    # Filter out actions that are not in the current choice list
+    print("Unfiltered campfire actions", campfire_actions)
+    print("Choice list", current_choice_list)
+    campfire_actions = {action: count for action, count in campfire_actions.items() if action in current_choice_list}
+
+    # Probability dist from counter
+    total_actions = sum(campfire_actions.values())
+
+    campfire_actions = {action: count / total_actions for action, count in campfire_actions.items()}
+    print("Smithing choices:", campfire_actions)
+
+    # Sample from dist for decision
+    if max_action:
+        best_action = max(campfire_actions, key=campfire_actions.get)
+    else:
+        best_action = np.random.choice(list(campfire_actions.keys()), p=list(campfire_actions.values()))
+
+    # Turn into command
+    command = f"choose {best_action}"
+    
+    return command, False, top_similar_states
+
 def event_choice(current_state, max_action):
     # Connect to the database
     db_url = 'sqlite:///slay_the_spire.db'
@@ -316,8 +456,9 @@ def event_choice(current_state, max_action):
     # Compute the probability of each event choice
     event_choices = Counter()
     for _, state in top_similar_states:
+        if state['id'] == current_state['id']:
+            continue
         actions_taken = json.loads(state['actions_taken'])
-        print("Actions taken:", actions_taken)
         for action in actions_taken:
             if 'Event' in action:
                 event_choice = action.split(": ")[-1].lower()
@@ -394,6 +535,8 @@ def pathing_choice(current_state, max_action):
     # For each observed pathing choice, compare to the extended_next_nodes options
     path_choices = Counter()
     for _, state in top_similar_states:
+        if state['id'] == current_state['id']:
+            continue
         actions_taken = json.loads(state['actions_taken'])
         for action in actions_taken:
             if 'Path taken' in action:

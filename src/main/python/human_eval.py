@@ -3,7 +3,7 @@ from openai_helpers import get_text_v3
 from collections import OrderedDict
 import ast
 import dataset
-from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice
+from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice, smithing_choice, boss_relic_choice
 
 # This script will select random states from winning runs, find the decisions made by humans, and see if GPT can make similar decisions
 
@@ -11,9 +11,13 @@ from key_queries import similar_card_choice, campfire_choice, event_choice, path
 def action_parser(sample_state):
     actions_taken = ast.literal_eval(sample_state['actions_taken'])
     campfire_action = None
-    campfire_options = ["rest", "smith", "recall"]
+    campfire_options = ["rest", "smith"]
     purge_action = None
     purge_options = ast.literal_eval(sample_state['deck'])
+    purge_options = [elem.lower() for elem in purge_options]
+    # Remove Ascender's bane from purge_options
+    if "AscendersBane" in purge_options:
+        purge_options.remove("AscendersBane")
     boss_relic_action = None
     boss_relic_options = None
     cards_action = None
@@ -22,13 +26,15 @@ def action_parser(sample_state):
     #event_options = None
     smith_action = None
     smith_options = list(set(ast.literal_eval(sample_state['deck'])))
+    if "AscendersBane" in smith_options:
+        smith_options.remove("AscendersBane")
     smith_options = [card.lower() for card in smith_options if "+1" not in card or "Searing Blow" in card]
     print("Actions taken:", actions_taken)
     for action in actions_taken:
         # Check for campfire action
         if "Campfire action" in action or "Card smithed" in action:
             if "Card smithed" in action:
-                campfire_action = "SMITH"
+                campfire_action = "smith"
             else:
                 campfire_action = action.split(":")[1].strip().lower()
             if campfire_action not in campfire_options:
@@ -39,9 +45,6 @@ def action_parser(sample_state):
             purge_action = action.split(":")[1].strip().lower()
             if purge_action not in purge_options:
                 purge_options.append(purge_action)
-            # Remove Ascender's bane from purge_options
-            if "ascendersbane" in purge_options:
-                purge_options.remove("ascendersbane")
             print("Purge action:", purge_action, "Options:", purge_options)
         # Check for boss relic
         if "Boss relic" in action:
@@ -85,17 +88,30 @@ def run_test(test_type):
     db = dataset.connect(db_url)
     table = db['states']
 
-    query = f"""
-    SELECT * 
-    FROM states
-    WHERE actions_taken LIKE '%{test_type}%'
-    AND ascension_level = 20
-    ORDER BY RANDOM()
-    LIMIT 5
-    """
+    if test_type == "Campfire action":
+        query = f"""
+        SELECT *
+        FROM states
+        WHERE (actions_taken LIKE '%Campfire action%' or actions_taken LIKE '%Card smithed%')
+        AND actions_taken NOT LIKE '%RECALL%'
+        AND ascension_level = 20
+        ORDER BY RANDOM()
+        LIMIT 20
+        """
+    else:
+        query = f"""
+        SELECT * 
+        FROM states
+        WHERE actions_taken LIKE '%{test_type}%'
+        AND ascension_level = 20
+        ORDER BY RANDOM()
+        LIMIT 20
+        """
 
     # Execute the query
     result = db.query(query)
+
+    #print(result)
 
     count = 0
     correct_count = 0
@@ -103,6 +119,8 @@ def run_test(test_type):
     chosen_actions = []
     random_accuracy = []
     for state in result:
+        #print(state)
+        #continue
         campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options = action_parser(state)
         screen_type = None
         similar_states = None
@@ -110,19 +128,25 @@ def run_test(test_type):
         if test_type == "Campfire action":
             action, options = campfire_action, campfire_options
             state['choice_list'] = options
-            similar_states = campfire_choice(state, False)
+            _, _, similar_states = campfire_choice(state, False)
             screen_type = "REST"
         elif test_type == "Card purged":
             action, options = purge_action, purge_options
             screen_type = "PURGE"
         elif test_type == "Boss relic":
             action, options = boss_relic_action, boss_relic_options
+            state['choice_list'] = options
+            _, _, similar_states = boss_relic_choice(state, False)
             screen_type = "BOSS_REWARD"
         elif test_type == "Card picked":
             action, options = cards_action, cards_options
+            state['choice_list'] = options
+            _, _, similar_states = similar_card_choice(state, False)
             screen_type = "CARD_REWARD"
         elif test_type == "Card smithed":
             action, options = smith_action, smith_options
+            state['choice_list'] = options
+            _, _, similar_states = smithing_choice(state, False)
             screen_type = "REST"
 
         state.pop('actions_taken', None)
@@ -134,8 +158,13 @@ def run_test(test_type):
         state["available_commands"] = options
         state["act"] = ((int)(state["ascension_level"] / 17) + 1)
         
+        # If similar states is not None, filter out anything with the same id
+        if similar_states:
+            similar_states = [s[1] for s in similar_states if s[1]['id'] != state['id']]
+            similar_states = similar_states[:5]
+
         # Test system
-        chosen_action = get_text_v3(state, "test_" + test_type + "_v1", None, True)
+        chosen_action = get_text_v3(state, "test_" + test_type + "_v1", similar_states, True)
 
         if chosen_action == action:
             correct_count += 1
@@ -143,6 +172,7 @@ def run_test(test_type):
         best_actions.append(action)
         chosen_actions.append(chosen_action)
         random_accuracy.append(1/len(options))
+    #exit()
     print(f"Test type: {test_type}, Accuracy: {correct_count}/{count}", correct_count/count)
     print("Best actions:", best_actions)
     print("Chosen actions:", chosen_actions)
@@ -157,8 +187,8 @@ def run_test(test_type):
     return
 
 if __name__ == "__main__":
-    test_results = run_test("Campfire action")
+    #test_results = run_test("Campfire action")
     #run_test("Card purged")
-    #run_test("Boss relic")
+    run_test("Boss relic")
     #run_test("Card picked")
     #run_test("Card smithed")

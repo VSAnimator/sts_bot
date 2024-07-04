@@ -3,6 +3,9 @@ import json
 import numpy as np
 import ast
 import os
+from groq import Groq
+
+MODEL = 'gpt-4o' #'llama3-70b-8192'
 
 # Read the system prompt from the file system.txt
 with open('prompts/system.txt', 'r') as file:
@@ -154,6 +157,15 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             "Helicone-Property-Session": f"{session_id}"
         }
     )
+    '''
+    client = Groq(
+        api_key="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",
+        base_url="https://groq.helicone.ai",
+        default_headers={
+            "Helicone-Auth": f"Bearer {os.environ.get('HELICONE_API_KEY')}",
+        }
+    )
+    '''
 
     try:
         # Get the valid options out of the prompt
@@ -193,7 +205,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
         elif screen_type == "MAP":
             custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_pathing.txt"
         elif screen_type == "GRID":
-            if prompt['game_state']['screen_state']['for_upgrade'] == True:
+            if 'game_state' not in prompt or prompt['game_state']['screen_state']['for_upgrade'] == True:
                 custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_upgrades.txt"
             else:
                 custom_file_name = None
@@ -249,41 +261,49 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             prompt = prompt + "\n" + "1. Evaluate the current deck and relics in the context of the current game state (Ascension, Level, Boss, etc.) along the following four dimensions: attack, defense, scaling, synergies. Return a 1-2 sentence evaluation for each dimension."
             current_messages = [
                 {"role": "system", "content": [{"type": "text", "text": system_prompt_custom}]},
+                #{"role": "system", "content": system_prompt_custom},
                 {"role": "user", "content": [{"type": "text", "text": prompt}]}
+                #{"role": "user", "content": prompt}
             ]
             gpt_response = client.chat.completions.create(
-                model="gpt-4o",
+                model=MODEL,
                 messages=current_messages,
             )
             # Add the response to the current_messages
-            current_messages.append({"role": "system", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+            current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+            #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
             # Evaluate each of the current options
             prompt = "Now, evaluate each of the choices available in context of the current deck and relics, considering how each choice contributes to both the short-term (defeating coming enemies) and the long-term (defeating the Act boss). Return a 1-2 sentence evaluation for each choice." + "\n" + "Choices available: " + str(all_options)
 
             current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+            #current_messages.append({"role": "user", "content": prompt})
             # Again call GPT
             gpt_response = client.chat.completions.create(
-                model="gpt-4o",
+                model=MODEL,
                 messages=current_messages,
             )
-            current_messages.append({"role": "system", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+            current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+            #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
 
             if similar_states:
                 # Stick the top 3 similar states in the prompt
                 prompt = "To help your decision, here are the top 5 most similar states from a database of human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
                 prompt += "\n" + "Analyze these states and compare them to the current state. What can be learned from the decisions humans made in these states? Strongly consider making choices similar to human choices from the 'actions taken' field."
                 current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+                #current_messages.append({"role": "user", "content": prompt})
                 gpt_response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model=MODEL,
                     messages=current_messages,
                 )
-                current_messages.append({"role": "system", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+                current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+                #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
 
             # Chose one of the options
             prompt = "Given this evaluation, which of the choices is the best choice to take to maximize the chances of winning the run?"
-            current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+            current_messages.append({"role": "assistant", "content": [{"type": "text", "text": prompt}]})
+            #current_messages.append({"role": "user", "content": prompt})
             gpt_response = client.chat.completions.create(
-                model="gpt-4o",
+                model=MODEL,
                 messages=current_messages,
                 tools=tools,
                 tool_choice="required"
