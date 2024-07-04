@@ -159,7 +159,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
     )
     '''
     client = Groq(
-        api_key="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",
+        api_key="",
         base_url="https://groq.helicone.ai",
         default_headers={
             "Helicone-Auth": f"Bearer {os.environ.get('HELICONE_API_KEY')}",
