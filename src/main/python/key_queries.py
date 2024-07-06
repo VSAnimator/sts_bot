@@ -2,6 +2,7 @@ import dataset
 import json
 from collections import Counter
 import numpy as np
+from wiki_info import get_card_rarity_by_name, get_relic_rarity_by_name
 
 # Define the current game state for comparison
 '''
@@ -11,12 +12,13 @@ current_state = {
     'potions': ['Weak Potion', 'Potion Slot', 'Potion Slot'],
     'current_hp': 80,
     'max_hp': 80,
-    'floor': 0,
+    'floor': 40,
     'ascension_level': 0,
     'choice_list': ['carnage', 'ghostly armor', 'fire breathing']
 }
 '''
 
+'''
 def calculate_similarity(state, current_state):
     # Calculate similarity score based on attributes
     similarity = 0
@@ -41,6 +43,90 @@ def calculate_similarity(state, current_state):
     relics_similarity = len(current_relics & target_relics) / len(target_relics)
     similarity += relics_similarity * 100
     #print("Relics similarity:", relics_similarity)
+
+    return similarity
+'''
+
+# Assuming these functions are defined elsewhere in your code
+def get_card_weight_by_rarity(card_name):
+    # Dummy function: replace with actual implementation
+    rarities = {'basic': 1, 'common': 1, 'uncommon': 3, 'rare': 5}
+    return rarities.get(card_name.lower(), 1)
+
+def get_relic_weight_by_rarity(relic_name):
+    # Dummy function: replace with actual implementation
+    rarities = {'common': 1, 'uncommon': 3, 'rare': 5, 'starter': 10, 'boss': 10, 'shop': 5}
+    return rarities.get(relic_name.lower(), 1)
+
+def calculate_similarity(state, current_state):
+    # Calculate similarity score based on attributes
+    similarity = 0
+    similarity += 100 - abs(state['current_hp'] - current_state['current_hp'])
+    similarity += 100 - abs(state['max_hp'] - current_state['max_hp'])
+    similarity += 100 - abs(state['floor'] - current_state['floor'])
+    similarity += 100 - abs(state['ascension_level'] - current_state['ascension_level'])
+
+    # Calculate similarity for deck
+    current_deck = Counter(json.loads(state['deck']))
+    target_deck = Counter([card.replace("_upg0", "").replace("_upg1", "+") for card in current_state['deck']])
+
+    deck_similarity = 0
+    total_weight = 0
+    for card in target_deck:
+        card_rarity = get_card_rarity_by_name(card)
+        card_rarity = get_card_weight_by_rarity(card_rarity)
+        common_cards = min(current_deck[card], target_deck[card])
+        deck_similarity += common_cards * card_rarity
+        total_weight += target_deck[card] * card_rarity
+
+    deck_similarity = deck_similarity / total_weight if total_weight != 0 else 0
+    similarity += deck_similarity * 50
+
+    # Repeat in other direction
+    reverse_deck_similarity = 0
+    total_weight = 0
+    for card in current_deck:
+        card_rarity = get_card_rarity_by_name(card)
+        card_rarity = get_card_weight_by_rarity(card_rarity)
+        common_cards = min(current_deck[card], target_deck[card])
+        reverse_deck_similarity += common_cards * card_rarity
+        total_weight += current_deck[card] * card_rarity
+
+    reverse_deck_similarity = reverse_deck_similarity / total_weight if total_weight != 0 else 0
+    similarity += reverse_deck_similarity * 50
+
+    #print("Deck similarity:", 0.5*deck_similarity + 0.5*reverse_deck_similarity)
+
+    # Calculate similarity for relics
+    current_relics = set(json.loads(state['relics']))
+    target_relics = set(current_state['relics'])
+
+    relics_similarity = 0
+    total_weight = 0
+    for relic in target_relics:
+        relic_rarity = get_relic_rarity_by_name(relic)
+        relic_rarity = get_relic_weight_by_rarity(relic_rarity)
+        if relic in current_relics:
+            relics_similarity += relic_rarity
+        total_weight += relic_rarity
+
+    relics_similarity = relics_similarity / total_weight if total_weight != 0 else 0
+
+    # Repeat in other direction
+    reverse_relics_similarity = 0
+    total_weight = 0
+    for relic in current_relics:
+        relic_rarity = get_relic_rarity_by_name(relic)
+        relic_rarity = get_relic_weight_by_rarity(relic_rarity)
+        if relic in target_relics:
+            reverse_relics_similarity += relic_rarity
+        total_weight += relic_rarity
+
+    reverse_relics_similarity = reverse_relics_similarity / total_weight if total_weight != 0 else 0
+
+    #print("Relics similarity:", 0.5*relics_similarity + 0.5*reverse_relics_similarity)
+
+    similarity += relics_similarity * 50 + reverse_relics_similarity * 50
 
     return similarity
 
@@ -107,6 +193,8 @@ def similar_card_choice(current_state, max_action):
 
     # Limit to top 50 similar states
     top_similar_states = similar_states[:50]
+    #print("Top similar states:", top_similar_states)
+    #exit()
 
     # Calculate the ratio of times each card was picked to the total number of times it was available
     card_picked_counts = Counter()
@@ -582,4 +670,4 @@ def pathing_choice(current_state, max_action):
     return command, False, top_similar_states
 
 # Test a query
-#command, done = similar_card_choice(current_state)
+#command, done = similar_card_choice(current_state, False)

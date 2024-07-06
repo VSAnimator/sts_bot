@@ -56,6 +56,9 @@ def action_parser(sample_state):
         if "Card picked" in action:
             cards_action = action.split(":")[1].split(",")[0].strip().lower()
             cards_options = [cards_action] + action.split(":")[-1].strip().lower().split(", ")
+            # Add "skip" if not there
+            if "skip" not in cards_options:
+                cards_options.append("skip")
             print("Cards picked:", cards_action, "Options:", cards_options)
         # Check for event choice
         '''
@@ -156,7 +159,7 @@ def run_test(test_type):
         #state[test_type] = action
         state["screen_type"] = screen_type
         state["available_commands"] = options
-        state["act"] = ((int)(state["ascension_level"] / 17) + 1)
+        state["act"] = ((int)(state["floor"] / 17) + 1)
         
         # If similar states is not None, filter out anything with the same id
         if similar_states:

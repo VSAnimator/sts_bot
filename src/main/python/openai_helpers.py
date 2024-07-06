@@ -4,6 +4,7 @@ import numpy as np
 import ast
 import os
 from groq import Groq
+from wiki_info import get_relic_by_name, get_card_by_name
 
 MODEL = 'gpt-4o' #'llama3-70b-8192'
 
@@ -274,6 +275,22 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
             # Evaluate each of the current options
             prompt = "Now, evaluate each of the choices available in context of the current deck and relics, considering how each choice contributes to both the short-term (defeating coming enemies) and the long-term (defeating the Act boss). Return a 1-2 sentence evaluation for each choice." + "\n" + "Choices available: " + str(all_options)
+
+            # Let's add some wiki info on each choice
+            if screen_type == "BOSS_REWARD":
+                # Add key info
+                prompt += "Don't worry about the current hp; since the boss battle has just been completed, you will be healed immediately after this reward is selected. \n" + "Key information on each choice: "
+                for choice in all_options:
+                    added_info = get_relic_by_name(choice)
+                    if added_info:
+                        prompt += "\n" + choice + ": " + added_info
+            elif screen_type == "CARD_REWARD":
+                # Add key info
+                prompt += "\n" + "Key information on each choice: "
+                for choice in all_options:
+                    added_info = get_card_by_name(choice)
+                    if added_info:
+                        prompt += "\n" + choice + ": " + added_info
 
             current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
             #current_messages.append({"role": "user", "content": prompt})
