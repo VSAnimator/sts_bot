@@ -592,16 +592,25 @@ def event_choice(current_state, max_action):
     table = db['states']
 
     # Serialize lists to JSON strings for comparison
-    current_choice_list = current_state['choice_list']
+    if 'choice_list' not in current_state:
+        current_choice_list = None
+    else:
+        current_choice_list = current_state['choice_list']
 
-    print("Event ID:", current_state['screen_state']['event_id'])
+    if 'screen_state' not in current_state:
+        event_id = current_state['actions_taken'].split(',')[0].split(': ')[1]
+    else:
+        event_id = current_state['screen_state']['event_id']
+    print("Event ID:", event_id)
+
+    escaped_id = event_id.replace("'", "''")
 
     query = f"""
     SELECT * 
     FROM states
-    WHERE actions_taken LIKE '%{current_state['screen_state']['event_id']}%'
+    WHERE actions_taken LIKE '%{event_id}%'
     AND actions_taken LIKE '%Event%'
-    AND floor BETWEEN {current_state['floor'] - 1} AND {current_state['floor'] + 1}
+    AND floor BETWEEN {current_state['floor'] - 3} AND {current_state['floor'] + 3}
     AND ascension_level = {current_state['ascension_level']}
     LIMIT 500
     """
@@ -617,7 +626,7 @@ def event_choice(current_state, max_action):
         
     # If there are fewer than 20 similar states, return
     print("Number of similar states:", len(similar_states))
-    if len(similar_states) < 20:
+    if len(similar_states) < 10:
         return "Not enough similar states", True, None
     
     # Sort by similarity
@@ -640,7 +649,8 @@ def event_choice(current_state, max_action):
     print("Unfiltered event choices", event_choices)
 
     # Filter out actions that are not in the current choice list
-    event_choices = {action: count for action, count in event_choices.items() if action in current_choice_list}
+    if current_choice_list is not None:
+        event_choices = {action: count for action, count in event_choices.items() if action in current_choice_list}
     # Can relax this condition if just passing into GPT TODO
 
     # Probability dist from counter

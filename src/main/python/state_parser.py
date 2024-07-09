@@ -92,9 +92,11 @@ def parse_game_state(game_state_json):
             _, _, max_e, min_e = traverse_map(map_nodes, start['x'], start['y'], "E", 10)
             info_string += ", min_elites=" + str(min_e) + ", max_elites=" + str(max_e)
             shop_path = find_shortest_path_to_symbol(map_nodes, start['x'], start['y'], "$")
-            info_string += ". Dist to shop: " + str(len(shop_path))
+            shop_string = ". Dist to shop: " + str(len(shop_path)) if len(shop_path) > 0 else ". No shop"
+            info_string += shop_string
             rest_path = find_shortest_path_to_symbol(map_nodes, start['x'], start['y'], "R")
-            info_string += ". Dist to rest: " + str(len(rest_path))
+            rest_string = ". Dist to rest: " + str(len(rest_path)) if len(rest_path) > 0 else ". No rest"
+            info_string += rest_string
             expanded_next_nodes["x=" + str(start['x'])] = info_string
         #print("Expanded next nodes", expanded_next_nodes)
         parsed_state['game_state']['screen_state']['next_node_info'] = expanded_next_nodes

@@ -23,8 +23,8 @@ def action_parser(sample_state):
     boss_relic_options = None
     cards_action = None
     cards_options = None
-    #event_action = None
-    #event_options = None
+    event_name = None
+    event_action = None
     smith_action = None
     smith_options = list(set(ast.literal_eval(sample_state['deck'])))
     if "AscendersBane" in smith_options:
@@ -62,25 +62,23 @@ def action_parser(sample_state):
                 cards_options.append("skip")
             print("Cards picked:", cards_action, "Options:", cards_options)
         # Check for event choice
-        '''
         if "Event" in action:
-            event_action = action.split(":")[1].split(",")[0].strip().lower()
-            event_options = [event_action] + action.split(":")[-1].strip().lower().split(", ")
-            print("Event choice:", event_action, "Options:", event_options)
-        '''
+            event_name = action.split(":")[1].split(",")[0].strip().lower()
+            event_action = action.split(":")[-1].strip().lower()
+            print("Event:", event_name, "Action:", event_action)
         if "Card smithed" in action:
             smith_action = action.split(":")[1].strip().lower()
             if smith_action not in smith_options:
                 smith_options.append(smith_action)
             print("Smith action:", smith_action, "Options:", smith_options)
-    return campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options
+    return campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options, event_name, event_action
 
 # Remove "actions taken" and "potions" from the sample state
 #sample_state.pop('actions_taken', None)
 #sample_state.pop('potions', None)
 
 # Valid tests: 1. Campfire action, 2. Card purged in event/shop, 3. Boss relic, 4. Cards picked vs not, 5. Card smithed
-valid_tests = ["Campfire action", "Card purged", "Boss relic", "Card picked", "Card smithed"]
+valid_tests = ["Campfire action", "Card purged", "Boss relic", "Card picked", "Card smithed", "Event"]
 
 '''
 def ss_prob(similar_states, options):
@@ -125,7 +123,7 @@ def run_test(test_type):
         query = f"""
         SELECT * 
         FROM states
-        WHERE actions_taken LIKE '%{test_type}%' AND actions_taken LIKE '%skip%'
+        WHERE actions_taken LIKE '%{test_type}%' and actions_taken NOT LIKE '%Neow Event%'
         AND ascension_level = 20
         ORDER BY RANDOM()
         LIMIT 50
@@ -143,9 +141,9 @@ def run_test(test_type):
     chosen_actions = []
     random_accuracy = []
     for state in result:
-        #print(state)
+        print(state)
         #continue
-        campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options = action_parser(state)
+        campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options, event_name, event_action = action_parser(state)
         screen_type = None
         similar_states = None
         # Filter to action, options for the test type
@@ -172,6 +170,15 @@ def run_test(test_type):
             state['choice_list'] = options
             _, _, similar_states = smithing_choice(state, False)
             screen_type = "REST"
+        elif test_type == "Event":
+            options = None
+            action = event_action
+            print("Event options:", options)
+            print("State:", state)
+            print("Action", action)
+            ss_choice, _, similar_states = event_choice(state, False)
+            print("SS choice:", ss_choice)
+            screen_type = "EVENT"
 
         state.pop('actions_taken', None)
         state.pop('potions', None)
@@ -203,7 +210,8 @@ def run_test(test_type):
         count += 1
         best_actions.append(action)
         chosen_actions.append(chosen_action)
-        random_accuracy.append(1/len(options))
+        if options:
+            random_accuracy.append(1/len(options))
     #exit()
     print(f"Test type: {test_type}, Accuracy: {correct_count}/{count}", correct_count/count)
     print("Best actions:", best_actions)
@@ -222,5 +230,6 @@ if __name__ == "__main__":
     #run_test("Campfire action")
     #run_test("Card purged")
     #run_test("Boss relic")
-    run_test("Card picked")
+    #run_test("Card picked")
+    run_test("Event")
     #run_test("Card smithed")

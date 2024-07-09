@@ -48,18 +48,28 @@ def traverse_map(map_nodes, start_x, start_y, symbol, depth):
             m_count += 1
 
         # Update the max path if the current one has more 'M' nodes
-        if m_count > max_m_count and (depth == 1 or len(current_node['children']) == 0):
+        if m_count > max_m_count and depth == 1:
             max_m_count = m_count
             max_path = current_path.copy()
-        if m_count < min_m_count and (depth == 1 or len(current_node['children']) == 0):
+        if m_count < min_m_count and depth == 1:
             min_m_count = m_count
             min_path = current_path.copy()
 
         # Traverse children nodes
+        no_children = True
         for child in current_node['children']:
             child_node = map_dict.get((child['x'], child['y']))
             if child_node and (child_node['x'], child_node['y']) not in current_path and depth > 1:
+                no_children = False
                 dfs(child_node, current_path, m_count, depth - 1)
+
+        if no_children:
+            if m_count > max_m_count:
+                max_m_count = m_count
+                max_path = current_path.copy()
+            if m_count < min_m_count:
+                min_m_count = m_count
+                min_path = current_path.copy()
 
         # Backtrack
         current_path.pop()
