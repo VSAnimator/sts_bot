@@ -10,7 +10,7 @@ from launch_game import start_game
 import os
 import signal
 import select
-from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice
+from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice, boss_relic_choice
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
@@ -174,12 +174,19 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             _, _, entries = event_choice(parsed_state['game_state'], max_action)
             #print("Response", response, gpt)
             #input("Press Enter to continue...")
+        if parsed_state['game_state']['screen_type'] == "BOSS_REWARD" and len(parsed_state['game_state']['choice_list']) > 1:
+            # Let's probabilistically make boss reward decisions
+            _, _, entries = boss_relic_choice(parsed_state['game_state'], max_action)
+            #print("Response", response, gpt)
+            #input("Press Enter to continue...")
+        '''
         if parsed_state['game_state']['screen_type'] == "MAP" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make pathing decisions
-            _, _, entries = pathing_choice(parsed_state['game_state'], max_action)
+            #_, _, entries = pathing_choice(parsed_state['game_state'], max_action)
             #print("Response", response, gpt)
             response = input("Give command...")
             gpt = False
+        '''
         # Control via GPT
         #if gpt:
         #    # Just ask the user to type the command
@@ -215,7 +222,7 @@ def main():
     process_1, process_2 = start_game()
     
     # Wait 20 seconds for the game to start
-    time.sleep(60)
+    time.sleep(40)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:

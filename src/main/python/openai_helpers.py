@@ -5,6 +5,7 @@ import ast
 import os
 from groq import Groq
 from wiki_info import get_relic_by_name, get_card_by_name
+import copy
 
 MODEL = 'gpt-4o' #'llama3-70b-8192'
 
@@ -85,7 +86,7 @@ def get_text_v2(prompt, session_id):
             with open(custom_file_name, 'r') as file:
                 custom_prompt = file.read()
             if screen_type == "MAP":
-                custom_prompt = custom_prompt + "\n" + "For each pathing option, 'expanded_next_nodes' contains a condensed representation of all the nodes you will have to visit before the next pathing decision. Use this to help decide which path to take." 
+                custom_prompt = custom_prompt + "\n" + "For each pathing option, check 'next_node_info' for key information to help decide which path to take." 
             system_prompt_custom = system_prompt_v2.replace('INSERT', custom_prompt)
         else:
             system_prompt_custom = system_prompt_v2.replace('INSERT', "")
@@ -173,6 +174,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
         if human_test:
             all_options = prompt['available_commands']
             del prompt['available_commands']
+            del prompt['choice_list']
             # Augment system prompt with task-specific information
             act_id = prompt['act']
             screen_type = prompt['screen_type']
@@ -199,6 +201,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             act_id = prompt['game_state']['act']
             screen_type = prompt['game_state']['screen_type']
 
+        joe_advice = None
         if screen_type == "CARD_REWARD":
             custom_file_name = "prompts/sub_prompts/act" + str(act_id) + "_cards.txt"
         elif screen_type == "SHOP_SCREEN":
@@ -216,12 +219,9 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             custom_file_name = None
         if custom_file_name:
             with open(custom_file_name, 'r') as file:
-                custom_prompt = file.read()
+                joe_advice = file.read()
             if screen_type == "MAP":
-                custom_prompt = custom_prompt + "\n" + "For each pathing option, 'expanded_next_nodes' contains a condensed representation of all the nodes you will have to visit before the next pathing decision. Use this to help decide which path to take." 
-            system_prompt_custom = system_prompt_v3.replace('INSERT', "Advice from Joe, an expert player: " + custom_prompt)
-        else:
-            system_prompt_custom = system_prompt_v3.replace('INSERT', "")
+                joe_advice = joe_advice + "\n" + "For each pathing option, 'expanded_next_nodes' contains a condensed representation of all the nodes you will have to visit before the next pathing decision. Use this to help decide which path to take." 
 
         prompt = json.dumps(prompt)
 
@@ -251,7 +251,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             }
         ]
 
-        print("System prompt: ", system_prompt_custom)
+        print("System prompt: ", system_prompt_v3)
 
         # Temporary test
         #system_prompt_custom = system_prompt
@@ -259,9 +259,9 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
         for i in range(3):
             if i > 0:
                 print("Retrying...")
-            prompt = prompt + "\n" + "1. Evaluate the current deck and relics in the context of the current game state (Ascension, Level, Boss, etc.) along the following four dimensions: attack, defense, scaling, synergies. Return a 1-2 sentence evaluation for each dimension."
+            prompt = prompt + "\n" + "Evaluate the current deck and relics in the context of the current game state (Ascension, Level, Boss, etc.) along the following four dimensions: attack, defense, scaling, synergies. Return a 1-2 sentence evaluation for each dimension."
             current_messages = [
-                {"role": "system", "content": [{"type": "text", "text": system_prompt_custom}]},
+                {"role": "system", "content": [{"type": "text", "text": system_prompt_v3}]},
                 #{"role": "system", "content": system_prompt_custom},
                 {"role": "user", "content": [{"type": "text", "text": prompt}]}
                 #{"role": "user", "content": prompt}
@@ -272,52 +272,114 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             )
             # Add the response to the current_messages
             current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+
+            # This will be re-used across all the branches
+            deck_analysis_messages = copy.deepcopy(current_messages)
+
+            # Zero-shot messages
+            zero_shot_messages = copy.deepcopy(current_messages)
+
             #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
             # Evaluate each of the current options
-            prompt = "Now, evaluate each of the choices available in context of the current deck and relics, considering how each choice contributes to both the short-term (defeating coming enemies) and the long-term (defeating the Act boss). Return a 1-2 sentence evaluation for each choice." + "\n" + "Choices available: " + str(all_options)
+            prompt = "Evaluate each of the choices available in context of the current deck and relics, considering how each choice contributes to both the short-term (defeating coming enemies) and the long-term (defeating the Act boss). Return a 1-2 sentence evaluation for each choice." + "\n"
 
             # Let's add some wiki info on each choice
+            key_choice_info = "Choices available: " + str(all_options)
             if screen_type == "BOSS_REWARD":
                 # Add key info
-                prompt += "Don't worry about the current hp; since the boss battle has just been completed, you will be healed immediately after this reward is selected. \n" + "Key information on each choice: "
+                key_choice_info += "Don't worry about the current hp; since the boss battle has just been completed, you will be healed immediately after this reward is selected. \n"
+            '''
+                key_choice_info += "Key information on each choice: "
                 for choice in all_options:
                     added_info = get_relic_by_name(choice)
                     if added_info:
-                        prompt += "\n" + choice + ": " + added_info
+                        key_choice_info += "\n" + choice + ": " + added_info
             elif screen_type == "CARD_REWARD":
                 # Add key info
-                prompt += "\n" + "Key information on each choice: "
+                key_choice_info += "\n" + "Key information on each choice: "
                 for choice in all_options:
                     added_info = get_card_by_name(choice)
                     if added_info:
-                        prompt += "\n" + choice + ": " + added_info
+                        key_choice_info += "\n" + choice + ": " + added_info
+            '''
 
-            current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
-            #current_messages.append({"role": "user", "content": prompt})
-            # Again call GPT
-            gpt_response = client.chat.completions.create(
-                model=MODEL,
-                messages=current_messages,
-            )
-            current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
-            #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
+            prompt += key_choice_info
 
+            zero_shot_response = None
+            if not similar_states and not joe_advice:
+                zero_shot_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+                #current_messages.append({"role": "user", "content": prompt})
+                # Again call GPT
+                gpt_response = client.chat.completions.create(
+                    model=MODEL,
+                    messages=zero_shot_messages,
+                )
+                zero_shot_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+                #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
+
+                # Chose one of the options given zero-shot eval
+                prompt = "Given this evaluation, which of the choices is the best choice to take to maximize the chances of winning the run? Give an 1-2 sentence explanation for your choice, and also provide 1 sentence explaining your confidence level in the choice and whether there are any other high-quality options"
+                zero_shot_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+                #current_messages.append({"role": "user", "content": prompt})
+                zero_shot_response = client.chat.completions.create(
+                    model=MODEL,
+                    messages=zero_shot_messages,
+                    #tools=tools,
+                    #tool_choice="required"
+                )
+
+            human_analysis_response = None
             if similar_states:
-                # Stick the top 3 similar states in the prompt
-                prompt = "To help your decision, here are the top 5 most similar states from a database of human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
-                prompt += "\n" + "Analyze these states and compare them to the current state. What can be learned from the decisions humans made in these states? Strongly consider making choices similar to human choices from the 'actions taken' field."
-                current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+                # Start from the deck analysis
+                human_analysis_messages = copy.deepcopy(deck_analysis_messages)
+
+                # Reason across the similar states to make a decision
+                prompt = "To help your decision, here are 5 potentially-similar states from a database of human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
+                prompt += "\n" + "1. Analyze each state, particularly the deck and relics, and compare them to the current state. Provide two sentences of analysis per state. 2. What can be learned from the decisions humans made in these states? Place particular emphasis on states that are very similar to the current state."
+                human_analysis_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
                 #current_messages.append({"role": "user", "content": prompt})
                 gpt_response = client.chat.completions.create(
                     model=MODEL,
-                    messages=current_messages,
+                    messages=human_analysis_messages,
                 )
-                current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+                human_analysis_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
                 #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
 
+                prompt = key_choice_info + "Given the evaluation of the deck and of similar states, which of the choices is the best choice to take to maximize the chances of winning the run? 1. Make a choice, 2. Provide 1 sentence explaining your confidence level in the choice and whether there are any other high-quality options."
+                human_analysis_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+                #current_messages.append({"role": "user", "content": prompt})
+                human_analysis_response = client.chat.completions.create(
+                    model=MODEL,
+                    messages=human_analysis_messages,
+                    #tools=tools,
+                    #tool_choice="required"
+                )
+
+            joe_response = None
+            if joe_advice:
+                # Make a choice based on Joe's advice
+                joe_messages = copy.deepcopy(deck_analysis_messages)
+                joe_messages.append({"role": "user", "content": [{"type": "text", 
+                    "text": key_choice_info + "Here is some advice from Joe, an expert player: " + joe_advice + "Given the evaluation of the deck and Joe's advice, which of the choices is the best choice to take to maximize the chances of winning the run? 1. Make a choice, 2. Provide 1 sentence explaining your confidence level in the choice and whether there are any other high-quality options."}]})
+
+                joe_response = client.chat.completions.create(
+                    model=MODEL,
+                    messages=joe_messages,
+                    #tools=tools,
+                    #tool_choice="required"
+                )
+
             # Chose one of the options
-            prompt = "Given this evaluation, which of the choices is the best choice to take to maximize the chances of winning the run?"
-            current_messages.append({"role": "assistant", "content": [{"type": "text", "text": prompt}]})
+            decision_messages = copy.deepcopy(deck_analysis_messages)
+            prompt = "Given the current game state, you have to choose to take one of the following actions: " + str(all_options) + "\n"
+            if not human_analysis_response and not joe_response:
+                prompt += "A zero-shot analyis of the choices: " + zero_shot_response.choices[0].message.content + "\n"
+            if human_analysis_response:
+                prompt += "An analysis of the choices based off similar states from successful human playthroughs: " + human_analysis_response.choices[0].message.content + "\n"
+            if joe_response:
+                prompt += "An analysis of the choices based off advice from an expert player: " + joe_response.choices[0].message.content + "\n"
+            prompt += "Which of the choices is the best choice to take to maximize the chances of winning the run?"
+            current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
             #current_messages.append({"role": "user", "content": prompt})
             gpt_response = client.chat.completions.create(
                 model=MODEL,

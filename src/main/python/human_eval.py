@@ -4,6 +4,7 @@ from collections import OrderedDict
 import ast
 import dataset
 from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice, smithing_choice, boss_relic_choice
+import json
 
 # This script will select random states from winning runs, find the decisions made by humans, and see if GPT can make similar decisions
 
@@ -81,6 +82,24 @@ def action_parser(sample_state):
 # Valid tests: 1. Campfire action, 2. Card purged in event/shop, 3. Boss relic, 4. Cards picked vs not, 5. Card smithed
 valid_tests = ["Campfire action", "Card purged", "Boss relic", "Card picked", "Card smithed"]
 
+'''
+def ss_prob(similar_states, options):
+    # Go through similar states, find one that is in options
+    for elem in similar_states:
+        actions_taken = json.loads(elem['actions_taken'])
+        for action in actions_taken:
+            action = action.lower()
+            print(action)
+            for option in options:
+                print(option)
+                print(action.find(options))
+                if action.find(option):
+                    print("Success")
+                    exit()
+                    return option
+    return None
+'''
+
 def run_test(test_type):
     if test_type not in valid_tests:
         print(f"Invalid test type: {test_type}")
@@ -95,21 +114,23 @@ def run_test(test_type):
         query = f"""
         SELECT *
         FROM states
-        WHERE (actions_taken LIKE '%Campfire action%' or actions_taken LIKE '%Card smithed%')
+        WHERE (actions_taken LIKE '%Card smithed%')
         AND actions_taken NOT LIKE '%RECALL%'
         AND ascension_level = 20
         ORDER BY RANDOM()
-        LIMIT 20
+        LIMIT 50
         """
+        # or actions_taken LIKE '%Card smithed%') (actions_taken LIKE '%Campfire action%')
     else:
         query = f"""
         SELECT * 
         FROM states
-        WHERE actions_taken LIKE '%{test_type}%'
+        WHERE actions_taken LIKE '%{test_type}%' AND actions_taken LIKE '%skip%'
         AND ascension_level = 20
         ORDER BY RANDOM()
-        LIMIT 20
+        LIMIT 50
         """
+        #AND actions_taken LIKE '%skip%'
 
     # Execute the query
     result = db.query(query)
@@ -131,7 +152,7 @@ def run_test(test_type):
         if test_type == "Campfire action":
             action, options = campfire_action, campfire_options
             state['choice_list'] = options
-            _, _, similar_states = campfire_choice(state, False)
+            ss_choice, _, similar_states = campfire_choice(state, False)
             screen_type = "REST"
         elif test_type == "Card purged":
             action, options = purge_action, purge_options
@@ -139,12 +160,12 @@ def run_test(test_type):
         elif test_type == "Boss relic":
             action, options = boss_relic_action, boss_relic_options
             state['choice_list'] = options
-            _, _, similar_states = boss_relic_choice(state, False)
+            ss_choice, _, similar_states = boss_relic_choice(state, False)
             screen_type = "BOSS_REWARD"
         elif test_type == "Card picked":
             action, options = cards_action, cards_options
             state['choice_list'] = options
-            _, _, similar_states = similar_card_choice(state, False)
+            ss_choice, _, similar_states = similar_card_choice(state, True)
             screen_type = "CARD_REWARD"
         elif test_type == "Card smithed":
             action, options = smith_action, smith_options
@@ -164,11 +185,19 @@ def run_test(test_type):
         # If similar states is not None, filter out anything with the same id
         if similar_states:
             similar_states = [s[1] for s in similar_states if s[1]['id'] != state['id']]
-            similar_states = similar_states[:5]
 
-        # Test system
-        chosen_action = get_text_v3(state, "test_" + test_type + "_v1", similar_states, True)
-
+        # Test nearest neighbors system
+        test_nn = True
+        if test_nn:
+            chosen_action = ss_choice
+            if "choose " in chosen_action:
+                chosen_action = chosen_action[7:]
+            if chosen_action == "bowl":
+                chosen_action = "singing bowl"
+        else:
+            if similar_states:
+                similar_states = similar_states[:5]
+            chosen_action = get_text_v3(state, "test_" + test_type + "_branched", similar_states, True)
         if chosen_action == action:
             correct_count += 1
         count += 1
@@ -190,8 +219,8 @@ def run_test(test_type):
     return
 
 if __name__ == "__main__":
-    #test_results = run_test("Campfire action")
+    #run_test("Campfire action")
     #run_test("Card purged")
-    run_test("Boss relic")
-    #run_test("Card picked")
+    #run_test("Boss relic")
+    run_test("Card picked")
     #run_test("Card smithed")

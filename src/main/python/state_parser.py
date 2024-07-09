@@ -1,4 +1,5 @@
 import json
+from map_processing import find_shortest_path_to_symbol, traverse_map
 
 # Helper function to find a node by its coordinates
 def find_node(x, y, map_data):
@@ -81,10 +82,22 @@ def parse_game_state(game_state_json):
         next_nodes = parsed_state['game_state']['screen_state']['next_nodes']
         expanded_next_nodes = {}
         for start in next_nodes:
+            info_string = ""
             curr_path = get_path_until_branch(start['x'], start['y'], game_state['game_state']['map'])
-            expanded_next_nodes["x=" + str(start['x'])] = str.join("",[node['symbol'] for node in curr_path])
-        print("Expanded next nodes", expanded_next_nodes)
-        parsed_state['game_state']['screen_state']['expanded_next_nodes'] = expanded_next_nodes
+            branching_length = len(curr_path)
+            info_string += "Steps to next branch: " + str(branching_length)
+            map_nodes = game_state['game_state']['map']
+            _, _, max_m, min_m = traverse_map(map_nodes, start['x'], start['y'], "M", 10)
+            info_string += ". In the next 10 nodes: min_monsters=" + str(min_m) + ", max_monsters=" + str(max_m)
+            _, _, max_e, min_e = traverse_map(map_nodes, start['x'], start['y'], "E", 10)
+            info_string += ", min_elites=" + str(min_e) + ", max_elites=" + str(max_e)
+            shop_path = find_shortest_path_to_symbol(map_nodes, start['x'], start['y'], "$")
+            info_string += ". Dist to shop: " + str(len(shop_path))
+            rest_path = find_shortest_path_to_symbol(map_nodes, start['x'], start['y'], "R")
+            info_string += ". Dist to rest: " + str(len(rest_path))
+            expanded_next_nodes["x=" + str(start['x'])] = info_string
+        #print("Expanded next nodes", expanded_next_nodes)
+        parsed_state['game_state']['screen_state']['next_node_info'] = expanded_next_nodes
 
     # For the choice list, if the elemnts are "card" or "relic", add the card or relic info to "choice_info" field in parsed_state
     choice_info = {}

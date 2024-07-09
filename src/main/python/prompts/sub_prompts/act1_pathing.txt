@@ -1,5 +1,6 @@
 Pathing decisions:
-- Aim to fight 2 or 3 elites
-- Prefer fighting elites later, especially after a camp fire
-- Do not fight an elite if your HP is low or if your deck doesn't have enough damage
+- In the first 5 floors, aim to fight as many regular monsters as possible. Avoid elites until floor 8 or later.
+- Aim to fight 2 or 3 elites total in the stage.
+- Prefer fighting elites after a camp fire or when HP is high.
+- Do not fight an elite if your HP is low or if your deck doesn't have enough damage.
 - The first 3 combats are from the "easy pool".  Further combats are from the "hard pool".  Prioritize easy pool fights, but delay hard pool fights until you have more damage.

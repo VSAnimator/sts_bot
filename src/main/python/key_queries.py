@@ -18,7 +18,6 @@ current_state = {
 }
 '''
 
-'''
 def calculate_similarity(state, current_state):
     # Calculate similarity score based on attributes
     similarity = 0
@@ -45,7 +44,6 @@ def calculate_similarity(state, current_state):
     #print("Relics similarity:", relics_similarity)
 
     return similarity
-'''
 
 # Assuming these functions are defined elsewhere in your code
 def get_card_weight_by_rarity(card_name):
@@ -58,6 +56,7 @@ def get_relic_weight_by_rarity(relic_name):
     rarities = {'common': 1, 'uncommon': 3, 'rare': 5, 'starter': 10, 'boss': 10, 'shop': 5}
     return rarities.get(relic_name.lower(), 1)
 
+'''
 def calculate_similarity(state, current_state):
     # Calculate similarity score based on attributes
     similarity = 0
@@ -129,6 +128,7 @@ def calculate_similarity(state, current_state):
     similarity += relics_similarity * 50 + reverse_relics_similarity * 50
 
     return similarity
+'''
 
 # Can make this more intelligent later
 def similar_card_choice(current_state, max_action):
@@ -143,15 +143,42 @@ def similar_card_choice(current_state, max_action):
     current_choice_list = current_state['choice_list']
 
     # If a + is in the choice, replace with "+1"
+    # TODO: check this logic when running agent again
+    # This is just for human eval...
+    '''
+    needs_replace = False
+    for elem in current_choice_list:
+        if "+" in elem and not elem.find("+1"):
+            needs_replace = True
+
+    if needs_replace:
+        current_choice_list = [choice.replace("+", "+1") for choice in current_choice_list]
+    '''
+    print("Current choice list:", current_choice_list)
     current_choice_list = [choice.replace("+", "+1") for choice in current_choice_list]
+    print("Current choice list:", current_choice_list)
 
     # Replace "bowl" with "singing bowl"
     current_choice_list = [choice.replace("bowl", "singing bowl") for choice in current_choice_list]
 
     # Adjust the SQL query to limit the number of rows returned and match similar action spaces
     # Has to have at least one element in common with the current_choice_list from actions_taken
+
+    '''
+    if len(current_choice_list) < 3:
+        return "Not enough choices", True, None
+
+    # Construct an array of all pairs of choices
+    choice_pairs = []
+    for elem1 in current_choice_list:
+        for elem2 in current_choice_list:
+            if elem1 != "skip" and elem2 != "skip" and elem1 != elem2:
+                choice_pairs.append([elem1, elem2])
+    '''
+
     choices_condition = " OR ".join(
-        [f"actions_taken LIKE '%{choice}%'" for choice in current_choice_list]
+        [f"actions_taken LIKE '%{choice}%'" for choice in current_choice_list if choice != 'skip']
+        #[f"actions_taken LIKE '%{choice[0]}%{choice[1]}%'" for choice in choice_pairs]
     )
 
     query = f"""
@@ -161,7 +188,6 @@ def similar_card_choice(current_state, max_action):
     AND ({choices_condition})
     AND floor BETWEEN {current_state['floor'] - 2} AND {current_state['floor'] + 2}
     AND ascension_level = {current_state['ascension_level']}
-    LIMIT 1000
     """
 
     # Execute the query
@@ -185,7 +211,7 @@ def similar_card_choice(current_state, max_action):
 
     # If there are fewer than 20 similar states, return
     print("Number of similar states:", len(similar_states))
-    if len(similar_states) < 50:
+    if len(similar_states) < 5:
         return "Not enough similar states", True, None
 
     # Sort by similarity
@@ -201,7 +227,7 @@ def similar_card_choice(current_state, max_action):
     card_available_counts = Counter()
 
     for _, state in top_similar_states:
-        if state['id'] == current_state['id']:
+        if "id" in current_state and state['id'] == current_state['id']:
             continue
         actions_taken = json.loads(state['actions_taken'])
         for action in actions_taken:
@@ -262,6 +288,8 @@ def similar_card_choice(current_state, max_action):
     # If skip is the best option, return "skip" command
     if best_card == "skip":
         command = "skip"
+        if "singing bowl" in current_state['choice_list']:
+            command = "choose bowl"
     
     return command, False, top_similar_states
 
@@ -324,7 +352,62 @@ def boss_relic_choice(current_state, max_action):
     # Limit to top 50 similar states
     top_similar_states = similar_states[:50]
 
-    return None, False, top_similar_states
+    # Calculate the ratio of times each card was picked to the total number of times it was available
+    card_picked_counts = Counter()
+    card_available_counts = Counter()
+
+    for _, state in top_similar_states:
+        if "id" in current_state and state['id'] == current_state['id']:
+            continue
+        actions_taken = json.loads(state['actions_taken'])
+        for action in actions_taken:
+            if 'Boss relic picked' in action:
+                picked_info = action.split(", Boss relics not picked: ")
+                picked_card = picked_info[0].split(": ")[1].lower()
+                not_picked_cards = picked_info[1].lower().split(", ")
+
+                # Increment the count for the picked card
+                card_picked_counts[picked_card] += 1
+
+                # Increment the count for all available cards
+                for card in not_picked_cards:
+                    card_available_counts[card] += 1
+                card_available_counts[picked_card] += 1
+
+                # If picked_card is not skip, increment the count for skip
+                if picked_card != 'skip':
+                    card_available_counts['skip'] += 1
+
+    # Calculate the ratios
+    print("Card picked counts:", card_picked_counts)
+    print("Card available counts:", card_available_counts)
+    card_ratios = {card: card_picked_counts[card] / card_available_counts[card] for card in card_available_counts}
+
+    # Calculate the average similarity
+    average_similarity = sum(similarity for similarity, _ in top_similar_states) / len(top_similar_states)
+
+    # Filter card_ratios to only include cards in the current_choice_list
+    card_ratios = {card: ratio for card, ratio in card_ratios.items() if card in current_choice_list or card == "skip"}
+
+    # Add an option for "skip", with a ratio of 1 - sum(other ratios)
+    #skip_ratio = max(1 - sum(card_ratios.values()), 0)
+    #card_ratios['skip'] = skip_ratio
+
+    print("Card ratios:", card_ratios)
+
+    # Choose a card probabilistically, using the ratios as weights
+    # First normalize the weights
+    if max_action:
+        best_card = max(card_ratios, key=card_ratios.get)
+    else:
+        total_weight = sum(card_ratios.values())
+        card_ratios = {card: ratio / total_weight for card, ratio in card_ratios.items()}
+        best_card = np.random.choice(list(card_ratios.keys()), p=list(card_ratios.values()))
+
+    # Turn into command
+    command = f"choose {best_card}"
+    
+    return command, False, top_similar_states
 
 def campfire_choice(current_state, max_action):
     # Connect to the database
@@ -367,7 +450,7 @@ def campfire_choice(current_state, max_action):
     # Compute the probability of each campfire action
     campfire_actions = Counter()
     for _, state in top_similar_states:
-        if state['id'] == current_state['id']:
+        if "id" in current_state and state['id'] == current_state['id']:
             continue
         actions_taken = json.loads(state['actions_taken'])
         for action in actions_taken:
@@ -410,12 +493,14 @@ def campfire_choice(current_state, max_action):
             best_action = "purge"
 
     # Auto-rest conditions
+    '''
     if "rest" in current_state['choice_list']:
         # Check if HP below 50% and rest is available
-        if current_state['current_hp'] <= current_state['max_hp'] / 2:
-            best_action = "rest"
+        #if current_state['current_hp'] <= current_state['max_hp'] / 2:
+        #    best_action = "rest"
         if current_state['floor'] % 17 >= 15:
             best_action = "rest"
+    '''
 
     # Turn into command
     command = f"choose {best_action}"
@@ -470,7 +555,7 @@ def smithing_choice(current_state, max_action):
     # Compute the probability of each campfire action
     campfire_actions = Counter()
     for _, state in top_similar_states:
-        if state['id'] == current_state['id']:
+        if "id" in current_state and state['id'] == current_state['id']:
             continue
         actions_taken = json.loads(state['actions_taken'])
         for action in actions_taken:
@@ -544,7 +629,7 @@ def event_choice(current_state, max_action):
     # Compute the probability of each event choice
     event_choices = Counter()
     for _, state in top_similar_states:
-        if state['id'] == current_state['id']:
+        if "id" in current_state and state['id'] == current_state['id']:
             continue
         actions_taken = json.loads(state['actions_taken'])
         for action in actions_taken:
@@ -623,7 +708,7 @@ def pathing_choice(current_state, max_action):
     # For each observed pathing choice, compare to the extended_next_nodes options
     path_choices = Counter()
     for _, state in top_similar_states:
-        if state['id'] == current_state['id']:
+        if "id" in current_state and state['id'] == current_state['id']:
             continue
         actions_taken = json.loads(state['actions_taken'])
         for action in actions_taken:
