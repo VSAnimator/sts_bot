@@ -673,6 +673,78 @@ def event_choice(current_state, max_action):
     
     return command, False, top_similar_states
 
+def battle_hp_prediction(current_state, max_action):
+    # Connect to the database
+    db_url = 'sqlite:///slay_the_spire.db'
+    db = dataset.connect(db_url)
+    table = db['states']
+
+    # Get the particular battle enemy from the state
+    if 'screen_state' not in current_state:
+        for action in json.loads(current_state['actions_taken']):
+            if 'Battle:' in action:
+                enemy_name = action.split(',')[1].split(': ')[1]
+                continue
+    else:
+        enemy_name = current_state['screen_state']['enemy_name']
+
+    #print("Enemy name:", enemy_name)
+
+    # Now query the database for similar states
+    query = f"""
+    SELECT *
+    FROM states
+    WHERE actions_taken LIKE '%Battle:%' AND actions_taken LIKE '%{enemy_name}%'
+    AND floor BETWEEN {current_state['floor'] - 1} AND {current_state['floor'] + 1}
+    AND ascension_level = {current_state['ascension_level']}
+    AND victory = 1
+    LIMIT 500
+    """
+
+    # Execute the query
+    result = db.query(query)
+
+    # Find similar states
+    similar_states = []
+    for state in result:
+        #print("State:", state)
+        similarity = calculate_similarity(state, current_state)
+        similar_states.append((similarity, state))
+    #exit()
+
+    # If there are fewer than 20 similar states, return
+    print("Number of similar states:", len(similar_states))
+    if len(similar_states) < 20:
+        return "Not enough similar states", True, None
+    
+    # Sort by similarity
+    similar_states.sort(reverse=True, key=lambda x: x[0])
+
+    # Limit to top 20 similar states
+    top_similar_states = similar_states[:20]
+
+    # Compute the hp lost in each state
+    hp_lost = Counter()
+    turns = Counter()
+    for _, state in top_similar_states:
+        if "id" in current_state and state['id'] == current_state['id']:
+            continue
+        for action in json.loads(state['actions_taken']):
+            if 'Battle:' in action:
+                print("Action:", action)
+                curr_hp_lost = (int)(float(action.split(",")[0].split(": ")[1].split(" ")[0]))
+                curr_turns = (int)(float(action.split(": ")[-1].split(",")[0]))
+        hp_lost[curr_hp_lost] += 1
+        turns[curr_turns] += 1
+    
+    # Get avg hp lost from counter
+    total_hp_lost = sum([int(hp) * count for hp, count in hp_lost.items()])
+    total_count = sum(hp_lost.values())
+    avg_hp_lost = total_hp_lost / total_count
+    avg_turns = sum([int(turn) * count for turn, count in turns.items()]) / sum(turns.values())
+
+    return avg_hp_lost, avg_turns, top_similar_states
+
 def pathing_choice(current_state, max_action):
     # Connect to the database
     db_url = 'sqlite:///slay_the_spire.db'

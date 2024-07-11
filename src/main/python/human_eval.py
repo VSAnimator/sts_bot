@@ -3,7 +3,7 @@ from openai_helpers import get_text_v3
 from collections import OrderedDict
 import ast
 import dataset
-from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice, smithing_choice, boss_relic_choice
+from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice, smithing_choice, boss_relic_choice, battle_hp_prediction
 import json
 
 # This script will select random states from winning runs, find the decisions made by humans, and see if GPT can make similar decisions
@@ -26,6 +26,8 @@ def action_parser(sample_state):
     event_name = None
     event_action = None
     smith_action = None
+    battle_hp_lost = None
+    battle_turns = None
     smith_options = list(set(ast.literal_eval(sample_state['deck'])))
     if "AscendersBane" in smith_options:
         smith_options.remove("AscendersBane")
@@ -71,14 +73,19 @@ def action_parser(sample_state):
             if smith_action not in smith_options:
                 smith_options.append(smith_action)
             print("Smith action:", smith_action, "Options:", smith_options)
-    return campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options, event_name, event_action
+        if "Battle:" in action:
+            battle_hp_lost = (int)(float(action.split(",")[0].split(": ")[1].split(" ")[0]))
+            battle_turns = (int)(float(action.split(": ")[-1].split(",")[0]))
+            print("Battle HP lost:", battle_hp_lost)
+            print("Battle turns:", battle_turns)
+    return campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options, event_name, event_action, battle_hp_lost, battle_turns
 
 # Remove "actions taken" and "potions" from the sample state
 #sample_state.pop('actions_taken', None)
 #sample_state.pop('potions', None)
 
 # Valid tests: 1. Campfire action, 2. Card purged in event/shop, 3. Boss relic, 4. Cards picked vs not, 5. Card smithed
-valid_tests = ["Campfire action", "Card purged", "Boss relic", "Card picked", "Card smithed", "Event"]
+valid_tests = ["Campfire action", "Card purged", "Boss relic", "Card picked", "Card smithed", "Event", "Battle"]
 
 '''
 def ss_prob(similar_states, options):
@@ -115,16 +122,21 @@ def run_test(test_type):
         WHERE (actions_taken LIKE '%Card smithed%')
         AND actions_taken NOT LIKE '%RECALL%'
         AND ascension_level = 20
+        AND victory = 1
         ORDER BY RANDOM()
         LIMIT 50
         """
         # or actions_taken LIKE '%Card smithed%') (actions_taken LIKE '%Campfire action%')
     else:
+        query_string = test_type
+        if test_type == "Battle":
+            query_string = "Battle:"
         query = f"""
         SELECT * 
         FROM states
-        WHERE actions_taken LIKE '%{test_type}%' and actions_taken NOT LIKE '%Neow Event%'
+        WHERE actions_taken LIKE '%{query_string}%' and actions_taken NOT LIKE '%Neow Event%'
         AND ascension_level = 20
+        AND victory = 1
         ORDER BY RANDOM()
         LIMIT 50
         """
@@ -140,12 +152,17 @@ def run_test(test_type):
     best_actions = []
     chosen_actions = []
     random_accuracy = []
+    hp_pred_error = []
+    turns_pred_error = []
     for state in result:
         print(state)
         #continue
-        campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options, event_name, event_action = action_parser(state)
+        campfire_action, campfire_options, purge_action, purge_options, boss_relic_action, boss_relic_options, cards_action, cards_options, smith_action, smith_options, event_name, event_action, battle_hp_lost, battle_turns = action_parser(state)
         screen_type = None
         similar_states = None
+        action = None
+        options = None
+        ss_choice = None
         # Filter to action, options for the test type
         if test_type == "Campfire action":
             action, options = campfire_action, campfire_options
@@ -179,6 +196,11 @@ def run_test(test_type):
             ss_choice, _, similar_states = event_choice(state, False)
             print("SS choice:", ss_choice)
             screen_type = "EVENT"
+        elif test_type == "Battle":
+            ss_battle_hp, ss_turns, similar_states = battle_hp_prediction(state, False)
+            if similar_states is None:
+                continue
+            screen_type = "BATTLE"
 
         state.pop('actions_taken', None)
         state.pop('potions', None)
@@ -197,7 +219,7 @@ def run_test(test_type):
         test_nn = True
         if test_nn:
             chosen_action = ss_choice
-            if "choose " in chosen_action:
+            if chosen_action is not None and "choose " in chosen_action:
                 chosen_action = chosen_action[7:]
             if chosen_action == "bowl":
                 chosen_action = "singing bowl"
@@ -212,11 +234,18 @@ def run_test(test_type):
         chosen_actions.append(chosen_action)
         if options:
             random_accuracy.append(1/len(options))
+        if test_type == "Battle":
+            hp_pred_error.append(abs(battle_hp_lost - ss_battle_hp))
+            turns_pred_error.append(abs(battle_turns - ss_turns))
+            print("Battle HP prediction:", ss_battle_hp, "Actual:", battle_hp_lost)
     #exit()
     print(f"Test type: {test_type}, Accuracy: {correct_count}/{count}", correct_count/count)
     print("Best actions:", best_actions)
     print("Chosen actions:", chosen_actions)
     print("Random accuracy:", np.mean(random_accuracy))
+    if test_type == "Battle":
+        print("HP prediction error:", np.mean(hp_pred_error))
+        print("Turns prediction error:", np.mean(turns_pred_error))
 
     # Write the results to a file
     with open("human_eval_" + test_type + "_results.txt", "w") as f:
@@ -224,6 +253,11 @@ def run_test(test_type):
         f.write(f"Best actions: {best_actions}\n")
         f.write(f"Chosen actions: {chosen_actions}\n")
         f.write(f"Random accuracy: {np.mean(random_accuracy)}\n")
+        if test_type == "Battle":
+            f.write(f"HP prediction error: {np.mean(hp_pred_error)}\n")
+            f.write(f"Turns prediction error: {np.mean(turns_pred_error)}\n")
+            f.write(f"HP prediction error list: {hp_pred_error}\n")
+            f.write(f"Turns prediction error list: {turns_pred_error}\n")
     return
 
 if __name__ == "__main__":
@@ -231,5 +265,6 @@ if __name__ == "__main__":
     #run_test("Card purged")
     #run_test("Boss relic")
     #run_test("Card picked")
-    run_test("Event")
+    #run_test("Event")
+    run_test("Battle")
     #run_test("Card smithed")

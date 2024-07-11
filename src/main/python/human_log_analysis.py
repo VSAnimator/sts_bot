@@ -47,7 +47,9 @@ def process_event(event, play_id):
                 "current_hp": event["current_hp_per_floor"][hp_floor],
                 "max_hp": event["max_hp_per_floor"][hp_floor],
                 "actions_taken": [],
-                "ascension_level": ascension_level
+                "ascension_level": ascension_level,
+                "victory": "victory" in event and event["victory"],
+                "score": event["score"] if "score" in event else "N/A"
             }
         except Exception as e:
             print("Error in floor: ", floor)
@@ -94,6 +96,28 @@ def process_event(event, play_id):
             if potion["floor"] == floor:
                 state["actions_taken"].append(f"Potion obtained: {potion['key']}")
                 current_potions.append(potion["key"])
+
+        floor_items = []
+        for i in range(len(event["items_purchased"])):
+            if event['item_purchase_floors'][i] == floor:
+                floor_items.append(event['items_purchased'][i])
+                # Also add the item to the state: is it a card, potion, or relic?
+                # Can check the wiki to see if card or relic
+                # For potion, should be in name
+                if event['items_purchased'][i].find("Potion") != -1:
+                    current_potions.append(event['items_purchased'][i])
+                elif event['items_purchased'][i] in event['relics']:
+                    current_relics.append(event['items_purchased'][i])
+                elif event['items_purchased'][i] in event['master_deck']: # Could just use wiki for this lol but this should be good, odds of adding and then removing same card are low. Good cards only lost via event...
+                    current_deck.append(event['items_purchased'][i])
+        
+        if len(floor_items) > 0:
+            state["actions_taken"].append(f"Item(s) purchased: {', '.join(floor_items)}")
+
+        # Also log battle outcomes
+        for battle in event["damage_taken"]:
+            if battle["floor"] == floor:
+                state["actions_taken"].append(f"Battle: {battle['damage']} damage, Enemies: {battle['enemies']}, Turns: {battle['turns']}")
 
         # Handle campfire choices
         for campfire_choice in event["campfire_choices"]:
@@ -193,7 +217,7 @@ def process_json_file(json_file, db_url):
         try:
             # Check if the playthrough was a winning run with Ironclad
             if event["character_chosen"] == "IRONCLAD":
-                if event["victory"]:# or victory_count > loss_count:
+                if event["victory"] or victory_count > loss_count:
                     states = process_event(event, play_id)
                     # Increment trajectory and state counts
                     trajectory_count += 1
