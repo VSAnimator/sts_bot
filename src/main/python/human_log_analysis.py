@@ -77,6 +77,24 @@ def process_event(event, play_id):
                         except Exception as e:
                             print("Current deck", current_deck)
                             print("Card not found in deck: ", card)
+                if "cards_transformed" in event_choice:
+                    for card in event_choice["cards_transformed"]:
+                        try:
+                            current_deck.remove(card)
+                        except Exception as e:
+                            print("Current deck", current_deck)
+                            print("Card not found in deck: ", card)
+                if "cards_upgraded" in event_choice:
+                    for card in event_choice["cards_upgraded"]:
+                        for i, current_card in enumerate(current_deck):
+                            if current_card == card:
+                                if "+" in card:
+                                    current_upgrade = int(card.split("+")[1])
+                                    card_base = card.split("+")[0]
+                                    current_deck[i] = f"{card_base}+{current_upgrade + 1}"
+                                else:
+                                    current_deck[i] = f"{card}+1"
+                                break
 
         for purge_floor, item_purged in zip(event["items_purged_floors"], event["items_purged"]):
             if purge_floor == floor:
@@ -91,6 +109,10 @@ def process_event(event, play_id):
             if relic["floor"] == floor:
                 state["actions_taken"].append(f"Relic obtained: {relic['key']}")
                 current_relics.append(relic["key"])
+                if relic["key"] == "Black Blood":
+                    # remove Burning Blood if Black Blood is obtained
+                    if "Burning Blood" in current_relics:
+                        current_relics.remove("Burning Blood")
 
         for potion in event["potions_obtained"]:
             if potion["floor"] == floor:
@@ -188,8 +210,12 @@ def process_event(event, play_id):
     # Check that current_deck at end matches the master deck
     '''
     if set(current_deck) != set(event["master_deck"]):
-        if len(set(current_deck) - set(event["master_deck"])) > 3 or len(set(event["master_deck"]) - set(current_deck)) > 3:
+        if len(set(current_deck) - set(event["master_deck"])) > 2 or len(set(event["master_deck"]) - set(current_deck)) > 2:
             states = []
+            print(event)
+            print("Current deck", current_deck)
+            print("Master deck", event["master_deck"])
+            exit()
             #print("Too many differences, skipping")
     '''
     return states
@@ -217,7 +243,8 @@ def process_json_file(json_file, db_url):
         try:
             # Check if the playthrough was a winning run with Ironclad
             if event["character_chosen"] == "IRONCLAD":
-                if event["victory"] or victory_count > loss_count:
+                #if event["victory"] or victory_count > loss_count:
+                if event["floor_reached"] > 10 and event["ascension_level"] % 10 == 0:
                     states = process_event(event, play_id)
                     # Increment trajectory and state counts
                     trajectory_count += 1
