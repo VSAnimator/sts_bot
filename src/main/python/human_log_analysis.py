@@ -27,7 +27,10 @@ def process_event(event, play_id):
             "current_hp": event["current_hp_per_floor"][0] if event["current_hp_per_floor"] else 0,
             "max_hp": event["max_hp_per_floor"][0] if event["max_hp_per_floor"] else 0,
             "actions_taken": json.dumps([f"Neow Event: {event['neow_bonus']}"]),
-            "ascension_level": ascension_level
+            "ascension_level": ascension_level,
+            "victory": "victory" in event and event["victory"],
+            "score": event["score"] if "score" in event else "N/A",
+            "max_floor": event["floor_reached"], # Key info for SARSA/value iteration
         })
     except Exception as e:
         print("Error in initial state")
@@ -41,8 +44,8 @@ def process_event(event, play_id):
             state = {
                 "play_id": play_id,
                 "floor": floor,
-                "deck": json.dumps(current_deck.copy()),
-                "relics": json.dumps(current_relics.copy()),
+                "deck": json.dumps(sorted(current_deck.copy())),
+                "relics": json.dumps(sorted(current_relics.copy())),
                 "potions": json.dumps(current_potions.copy()),
                 "current_hp": event["current_hp_per_floor"][hp_floor],
                 "max_hp": event["max_hp_per_floor"][hp_floor],
@@ -54,7 +57,7 @@ def process_event(event, play_id):
         except Exception as e:
             print("Error in floor: ", floor)
             print("Event: ", event)
-            return states
+            return [] #states
 
         # Add card choices and purges
         for choice in event["card_choices"]:
@@ -188,7 +191,7 @@ def process_event(event, play_id):
                 #print("path", path)
                 if path is not None:
                     offset = 1
-                    while floor + offset < len(event["path_per_floor"]) and len(path) < 3:
+                    while floor + offset < len(event["path_per_floor"]) and len(path) < 5:
                         if event["path_per_floor"][floor + offset] is None:
                             break
                         path = path + event["path_per_floor"][floor + offset]

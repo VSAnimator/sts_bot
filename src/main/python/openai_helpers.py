@@ -334,7 +334,11 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 human_analysis_messages = copy.deepcopy(deck_analysis_messages)
 
                 # Reason across the similar states to make a decision
-                prompt = "To help your decision, here are 5 potentially-similar states from a database of human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
+                if len(similar_states) == 2:
+                    # We have wins and losses
+                    prompt = "To help your decision, here are 5 potentially-similar states from a database of winning human playthroughs, and 5 from a database of losing human playthroughs. The 'actions taken' field annotates the choices the human made at a particular state. \n Winning: " + str(similar_states[0][:5]) + " \nLosing: " + str(similar_states[1][:5])
+                else:
+                    prompt = "To help your decision, here are 5 potentially-similar states from a database of winning human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
                 prompt += "\n" + "1. Analyze each state, particularly the deck and relics, and compare them to the current state. Provide two sentences of analysis per state. 2. What can be learned from the decisions humans made in these states? Place particular emphasis on states that are very similar to the current state."
                 human_analysis_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
                 #current_messages.append({"role": "user", "content": prompt})
@@ -400,3 +404,129 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
         print("Exception: ", e)
         print("Sad")
         raise Exception("Failed to get text.")
+
+def text_grad(filename):
+    #filename = "1718306208.303196"
+
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"grad_{filename}"
+        }
+    )
+
+    with open("runs/" + filename + ".txt", "r") as file:
+        trajectory_file = file.read()
+    # Split into a list line by line
+    trajectory = trajectory_file.split("\n")
+
+    final_state = trajectory[-2]
+
+    with open('prompts/system_analysis.txt', 'r') as file:
+        system_prompt = file.read()
+    system_prompt = system_prompt.replace('INSERT', final_state)
+
+    print("System prompt: ", system_prompt)
+
+    # Make a file to write to
+    write_file = open("runs_processed/" + filename + ".txt", "w")
+
+    # Parse the final state and get the floor, score, and victory true/false
+    print("Final state: ", final_state)
+    #final_state = ast.literal_eval(final_state)
+    #floor = final_state['game_state']['floor']
+    #score = final_state['game_state']['screen_state']['score']
+    #victory = final_state['game_state']['screen_state']['victory']
+
+    # Run gpt eval on the final state
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": [{"type": "text", "text": "You are evaluating the final state of a playthrough of Slay the Spire. You will be provided the end state of a run through the game. In three sentences, describe changes to the state (deck, relics, etc.), if any, that could have improved the outcome of the run."}],},
+            {"role": "user", "content": [{"type": "text", "text": final_state}]}
+        ],
+    )
+
+    output_state_eval = response.choices[0].message.content
+
+    #output_state_eval = "Floor: " + str(floor) + ", Score: " + str(score) + ", Victory: " + str(victory)
+    print("Output state evaluation: ", output_state_eval)
+    # Now loop through the trajectory and analyze each decision
+    for i in range(len(trajectory) - 3, -1, -1):
+        try:
+            state = trajectory[i]
+            # Check if its a bot action
+            if "Bot response: " not in state:
+                continue
+            # Now put together prompt as last two elements of trajectory
+            #prompt = "Evaluate this decision by the metagame bot: " + trajectory[i - 1] + "\n" + trajectory[i]
+            #print("Prompt: ", prompt)
+
+            # Input state
+            input_state = trajectory[i - 1]
+
+            # Decision
+            decision = trajectory[i].split("Bot response: ")[1]
+
+            # Output state
+            output_state = trajectory[i + 1]
+
+            print("Input state: ", input_state)
+            print("Decision: ", decision)
+            print("Output state: ", output_state)
+
+            prompt = "Evaluate this decision by the metagame bot: \n Input state X: " + input_state + "\n Decision Y: " + decision + "\n Evaluation of output state Z: " + output_state_eval
+
+            # We need the "choice_list" from the input state
+            input_state = ast.literal_eval(input_state)
+            choice_list = input_state['game_state']['choice_list']
+            
+            print("Choice list: ", choice_list)
+
+            # Create tool
+            tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "evaluate_decision_and_changes_to_input",
+                        "description": "Evaluate how both the decision made and the input state could've been altered to address the evaluation of the output state",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "evaluation_of_action_Y": {"type": "string", "description": "One-sentence evaluation of the action Y taken"},
+                                "best_action": {
+                                    "type": "string",
+                                    "description": "Best action y that could've been taken from the choice list",
+                                    "enum": choice_list
+                                },
+                                "changes_to_input_state": {"type": "string", "description": "In three sentences, describe changes to the state X (deck, relics, etc.), if any, that could have address the evaluation of the output state Z. "},
+                            },
+                            "required": ["evaluation_of_action_taken", "best_action", "changes_to_input_state"],
+                        },
+                    },
+                }
+            ]
+
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+                    {"role": "user", "content": [{"type": "text", "text": prompt}]}
+                ],
+                tools=tools,
+                tool_choice="required"
+            )
+            print("Response: ", response.choices[0].message.tool_calls)
+
+            # Update the output_state_eval
+            output_state_eval = ast.literal_eval(response.choices[0].message.tool_calls[0].function.arguments)['changes_to_input_state']
+            print("Output state evaluation: ", output_state_eval)
+            #split_response = json.dumps(response.choices[0].message.tool_calls[0].function.arguments)
+            # Strip all newline chars from response
+            #stripped_response = str(response.choices[0].message.tool_calls[0].function.arguments).replace("\n", "")
+            #write_file.write(stripped_response + "\n")
+        except Exception as e:
+            print("Exception: ", e)
+            write_file.write("Failed to get text.\n")
+            exit()

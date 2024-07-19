@@ -11,12 +11,20 @@ import os
 import signal
 import select
 from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice, boss_relic_choice
+import string
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
 TIMEOUT_THRESHOLD = 5 * 60 * 100 # 5 minutes
 
 exception_count = 0
+
+def create_seed():
+    # Create seed like this: 5F68Z78NR2FSF
+    char_string = string.digits + string.ascii_uppercase
+    # Remove 'O' from the char_string
+    char_string = char_string.replace('O', '')
+    return ''.join(np.random.choice(list(char_string)) for _ in range(len("5F68Z78NR2FSF")))
 
 def receive_messages(sock, send_message_func):
     global exception_count
@@ -65,7 +73,7 @@ def receive_messages(sock, send_message_func):
                     state_message = "state"
                     if exception_count == 5:
                         # Maybe we just need to start a new game
-                        state_message = "start ironclad 10"
+                        state_message = "start ironclad 10 " + create_seed()
                         new_run = True
                     encoded_state_message = state_message.encode('utf-8')
                     sock.sendall(len(encoded_state_message).to_bytes(4, byteorder='big'))

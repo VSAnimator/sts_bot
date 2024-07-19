@@ -130,7 +130,15 @@ def calculate_similarity(state, current_state):
     return similarity
 '''
 
-rl_mode = True
+rl_mode = False
+negative_examples = True
+
+def counts_to_ratios(card_count_list, current_choice_list):
+    #print("RL card counts", card_count_list)
+    card_ratios = {card: (card_count_list[1].get(card, 0)) * 1.0 / (card_count_list[0].get(card, 0) + card_count_list[1].get(card, 0)) for card in card_count_list[1]}
+    # Filter card_ratios to only include cards in the current_choice_list
+    card_ratios = {card: ratio for card, ratio in card_ratios.items() if card in current_choice_list or card == "skip"}
+    return card_ratios
 
 # Can make this more intelligent later
 def similar_card_choice(current_state, max_action):
@@ -148,6 +156,7 @@ def similar_card_choice(current_state, max_action):
     # TODO: check this logic when running agent again
     # This is just for human eval...
 
+    '''
     needs_replace = False
     for elem in current_choice_list:
         if "+" in elem and not elem.find("+1"):
@@ -156,10 +165,9 @@ def similar_card_choice(current_state, max_action):
     if needs_replace:
         current_choice_list = [choice.replace("+", "+1") for choice in current_choice_list]
     '''
-    print("Current choice list:", current_choice_list)
+    #print("Current choice list:", current_choice_list)
     current_choice_list = [choice.replace("+", "+1") for choice in current_choice_list]
-    print("Current choice list:", current_choice_list)
-    '''
+    #print("Current choice list:", current_choice_list)
 
     # Replace "bowl" with "singing bowl"
     current_choice_list = [choice.replace("bowl", "singing bowl") for choice in current_choice_list]
@@ -186,8 +194,10 @@ def similar_card_choice(current_state, max_action):
 
     card_ratio_list = []
     card_count_list = []
+    negative_similar_states = None
+
     for victory in [0, 1]:
-        if victory == 0 and not rl_mode:
+        if victory == 0 and not rl_mode and not negative_examples:
             continue
         # Query victory states
         query = f"""
@@ -229,6 +239,8 @@ def similar_card_choice(current_state, max_action):
 
         # Limit to top 50 similar states
         top_similar_states = similar_states[:50]
+        if victory == 0:
+            negative_similar_states = top_similar_states
         #print("Top similar states:", top_similar_states)
         #exit()
 
@@ -288,12 +300,7 @@ def similar_card_choice(current_state, max_action):
     '''
 
     if rl_mode:
-        #print("RL card counts", card_count_list)
-        card_ratios = {card: (card_count_list[1].get(card, 0)) * 1.0 / (card_count_list[0].get(card, 0) + card_count_list[1].get(card, 0)) for card in card_count_list[1]}
-        # Filter card_ratios to only include cards in the current_choice_list
-        card_ratios = {card: ratio for card, ratio in card_ratios.items() if card in current_choice_list or card == "skip"}
-        print("RL card ratios", card_ratios)
-        #exit()
+        card_ratios = counts_to_ratios(card_count_list, current_choice_list)
 
     # Choose a card probabilistically, using the ratios as weights
     # First normalize the weights
@@ -321,7 +328,7 @@ def similar_card_choice(current_state, max_action):
         if "singing bowl" in current_state['choice_list']:
             command = "choose bowl"
     
-    return command, False, top_similar_states
+    return command, False, [top_similar_states, negative_similar_states]
 
 # Can make this more intelligent later
 def boss_relic_choice(current_state, max_action):
@@ -347,7 +354,11 @@ def boss_relic_choice(current_state, max_action):
     )
 
     card_ratio_list = []
+    card_count_list = []
+    negative_similar_states = None
     for victory in [0, 1]:
+        if victory == 0 and not rl_mode and not negative_examples:
+            continue
         query = f"""
         SELECT * 
         FROM states
@@ -384,6 +395,8 @@ def boss_relic_choice(current_state, max_action):
 
         # Limit to top 50 similar states
         top_similar_states = similar_states[:50]
+        if victory == 0:
+            negative_similar_states = top_similar_states
 
         # Calculate the ratio of times each card was picked to the total number of times it was available
         card_picked_counts = Counter()
@@ -429,7 +442,9 @@ def boss_relic_choice(current_state, max_action):
         print("Card ratios:", card_ratios)
 
         card_ratio_list.append(card_ratios)
+        card_count_list.append(card_picked_counts)
 
+    '''
     # Get the difference in ratios
     card_ratios = {card: card_ratio_list[1][card] - card_ratio_list[0][card] for card in card_ratio_list[0]}
 
@@ -437,6 +452,10 @@ def boss_relic_choice(current_state, max_action):
     min_ratio = min(card_ratios.values())
     if min_ratio < 0:
         card_ratios = {card: ratio - min_ratio for card, ratio in card_ratios.items()}
+    '''
+
+    if rl_mode:
+        card_ratios = counts_to_ratios(card_count_list, current_choice_list)
 
     # Choose a card probabilistically, using the ratios as weights
     # First normalize the weights
@@ -450,7 +469,7 @@ def boss_relic_choice(current_state, max_action):
     # Turn into command
     command = f"choose {best_card}"
     
-    return command, False, top_similar_states
+    return command, False, [top_similar_states, negative_similar_states]
 
 def campfire_choice(current_state, max_action):
     # Connect to the database
@@ -462,7 +481,11 @@ def campfire_choice(current_state, max_action):
     current_choice_list = current_state['choice_list']
 
     card_ratio_list = []
+    card_count_list = []
+    negative_similar_states = None
     for victory in [0, 1]:
+        if victory == 0 and not rl_mode and not negative_examples:
+            continue
         query = f"""
         SELECT * 
         FROM states
@@ -492,6 +515,8 @@ def campfire_choice(current_state, max_action):
 
         # Limit to top 20 similar states
         top_similar_states = similar_states[:20]
+        if victory == 0:
+            negative_similar_states = top_similar_states
 
         # Compute the probability of each campfire action
         campfire_actions = Counter()
@@ -518,6 +543,7 @@ def campfire_choice(current_state, max_action):
 
         card_ratio_list.append(campfire_actions)
 
+    '''
     # Get the difference in ratios
     campfire_actions = {card: card_ratio_list[1][card] - card_ratio_list[0][card] for card in card_ratio_list[0]}
 
@@ -525,6 +551,10 @@ def campfire_choice(current_state, max_action):
     min_ratio = min(campfire_actions.values())
     if min_ratio < 0:
         campfire_actions = {card: ratio - min_ratio for card, ratio in campfire_actions.items()}
+    '''
+
+    if rl_mode:
+        campfire_actions = counts_to_ratios(card_ratio_list, current_choice_list)
 
     # Probability dist from counter
     total_actions = sum(campfire_actions.values())
@@ -561,7 +591,7 @@ def campfire_choice(current_state, max_action):
     # Turn into command
     command = f"choose {best_action}"
     
-    return command, False, top_similar_states
+    return command, False, [top_similar_states, negative_similar_states]
 
 def smithing_choice(current_state, max_action):
     # Connect to the database
@@ -578,7 +608,10 @@ def smithing_choice(current_state, max_action):
     )
 
     card_ratio_list = []
+    negative_similar_states = None
     for victory in [0, 1]:
+        if victory == 0 and not rl_mode and not negative_examples:
+            continue
         query = f"""
         SELECT * 
         FROM states
@@ -608,8 +641,10 @@ def smithing_choice(current_state, max_action):
 
         # Limit to top 20 similar states
         top_similar_states = similar_states[:50]
+        if victory == 0:
+            negative_similar_states = top_similar_states
 
-        return None, False, top_similar_states
+        #return None, False, top_similar_states
 
         # Compute the probability of each campfire action
         campfire_actions = Counter()
@@ -635,6 +670,7 @@ def smithing_choice(current_state, max_action):
 
         card_ratio_list.append(campfire_actions)
 
+    '''
     # Get the difference in ratios
     campfire_actions = {card: card_ratio_list[1][card] - card_ratio_list[0][card] for card in card_ratio_list[0]}
 
@@ -642,6 +678,10 @@ def smithing_choice(current_state, max_action):
     min_ratio = min(campfire_actions.values())
     if min_ratio < 0:
         campfire_actions = {card: ratio - min_ratio for card, ratio in campfire_actions.items()}
+    '''
+
+    if rl_mode:
+        campfire_actions = counts_to_ratios(card_count_list, current_choice_list)
 
     # Sample from dist for decision
     if max_action:
@@ -652,7 +692,7 @@ def smithing_choice(current_state, max_action):
     # Turn into command
     command = f"choose {best_action}"
     
-    return command, False, top_similar_states
+    return command, False, [top_similar_states, negative_similar_states]
 
 def event_choice(current_state, max_action):
     # Connect to the database
@@ -675,15 +715,17 @@ def event_choice(current_state, max_action):
     escaped_id = event_id.replace("'", "''")
 
     card_ratio_list = []
+    negative_similar_states = None
     for victory in [0, 1]:
+        if victory == 0 and not rl_mode and not negative_examples:
+            continue
         query = f"""
         SELECT * 
         FROM states
-        WHERE actions_taken LIKE '%{event_id}%'
+        WHERE actions_taken LIKE '%{escaped_id}%'
         AND actions_taken LIKE '%Event%'
         AND floor BETWEEN {current_state['floor'] - 3} AND {current_state['floor'] + 3}
         AND ascension_level = {current_state['ascension_level']}
-        LIMIT 500
         AND victory = {victory}
         """
 
@@ -706,6 +748,8 @@ def event_choice(current_state, max_action):
 
         # Limit to top 20 similar states
         top_similar_states = similar_states[:20]
+        if victory == 0:
+            negative_similar_states = top_similar_states
 
         # Compute the probability of each event choice
         event_choices = Counter()
@@ -728,14 +772,15 @@ def event_choice(current_state, max_action):
         # Probability dist from counter
         total_actions = sum(event_choices.values())
 
-        event_choices = {action: count / total_actions for action, count in event_choices.items()}
-        print("Event choices:", event_choices)
+        event_choice_ratios = {action: count / total_actions for action, count in event_choices.items()}
+        print("Event choices:", event_choice_ratios)
 
-        if len(event_choices) == 0 and victory == 1:
+        if len(event_choice_ratios) == 0 and victory == 1:
             return "No valid choices", True, None
 
         card_ratio_list.append(event_choices)
 
+    '''
     # Get the difference in ratios
     event_choices = {card: card_ratio_list[1][card] - card_ratio_list[0][card] for card in card_ratio_list[0]}
 
@@ -743,6 +788,12 @@ def event_choice(current_state, max_action):
     min_ratio = min(event_choices.values())
     if min_ratio < 0:
         event_choices = {card: ratio - min_ratio for card, ratio in event_choices.items()}
+    '''
+
+    if rl_mode:
+        event_choices = counts_to_ratios(card_ratio_list, current_choice_list)
+    else:
+        event_choices = event_choice_ratios
 
     # Sample from dist for decision
     if max_action:
@@ -753,7 +804,7 @@ def event_choice(current_state, max_action):
     # Turn into command
     command = f"choose {best_action}"
     
-    return command, False, top_similar_states
+    return command, False, [top_similar_states, negative_similar_states]
 
 def battle_hp_prediction(current_state, max_action):
     # Connect to the database
