@@ -104,6 +104,10 @@ for floor in range(48, 0, -1):
             value = compute_victory_rate(cluster_states)
         else:
             value = compute_value(df, cluster_states)
+            monte_carlo_value = compute_victory_rate(cluster_states)
+            if len(cluster_states) > 30:
+                print("Monte Carlo error", abs(value - monte_carlo_value))
+                print("Monte Carlo value", monte_carlo_value)
 
         if len(cluster_states) > 30:
             print(f"Cluster {cluster_id} has value {value}")

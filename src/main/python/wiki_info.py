@@ -52,6 +52,7 @@ def get_relic_rarity_by_name(relic_name):
     return result['Rarity'].values[0]
 
 # Example usage
+'''
 relic_name = 'vajra'
 card_name = 'Bash'
 
@@ -66,3 +67,4 @@ relic_rarity = get_relic_rarity_by_name(relic_name)
 
 print("\nCard Rarity:", card_rarity)
 print("Relic Rarity:", relic_rarity)
+'''

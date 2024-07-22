@@ -259,7 +259,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
         for i in range(3):
             if i > 0:
                 print("Retrying...")
-            prompt = prompt + "\n" + "Evaluate the current deck and relics in the context of the current game state (Ascension, Level, Boss, etc.) along the following four dimensions: attack, defense, scaling, synergies. Return a 1-2 sentence evaluation for each dimension."
+            prompt = prompt + "\n" + "Evaluate the current deck and relics in the context of the current game state (Ascension, Floor, Boss, etc.) along the following dimensions: attack, defense, scaling, synergies, card draw. Return a 1-2 sentence evaluation for each dimension."
             current_messages = [
                 {"role": "system", "content": [{"type": "text", "text": system_prompt_v3}]},
                 #{"role": "system", "content": system_prompt_custom},
@@ -530,3 +530,96 @@ def text_grad(filename):
             print("Exception: ", e)
             write_file.write("Failed to get text.\n")
             exit()
+
+def win_prediction(system_prompt, state, similar_states, run_id):
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"win_pred_{run_id}"
+        }
+    )
+
+    prompt = "State to evaluate: " + json.dumps(state) + "\n" + "Similar states: " + str(similar_states) + "\n" + "Return both 'thought_process' and 'predicted_outcome'" 
+
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "predict_outcome",
+            "description": "Predict the outcome of the final boss battle for Slay the Spire",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "thought_process": {
+                        "type": "string",
+                        "description": "A step-by-step thought process on how to evaluate the win probability of the state"
+                    },
+                    "predicted_outcome": {
+                        "type": "string",
+                        "description": "0 for a loss, 1 for a win",
+                        "enum": ["0", "1"]
+                    }
+                },
+                "required": ["thought_process", "predicted_outcome"]
+            }
+        }
+    }
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+            {"role": "user", "content": [{"type": "text", "text": prompt}]},
+        ],
+        tools=[tool],
+        tool_choice="required"
+    )
+
+    return system_prompt, response.choices[0].message.tool_calls[0].function.arguments
+
+def update_win_prediction_prompt(prompt, state, similar_states, response, feedback, run_id):
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"win_pred_grad_{run_id}"
+        }
+    )
+
+    system_prompt = "You are a superhuman AI that learns from its own mistakes by updating its system prompt. You previously predicted outcomes of playthroughs of Slay the Spire, and you will be given feedback on these previous predictions. Using the feedback on prior decisions, you will then describe how to update your system prompt to improve your future predictions. Don't make the system prompt overly long."
+
+    prompt = "Original prompt: " + prompt + "\n" + "State provided: " + json.dumps(state) + "\n" + "Similar states provided: " + str(similar_states) + "\nYour evaluation: " + response + "\n" + "Feedback on your evaluation:" + feedback + "\n Describe how to update your system prompt to improve your future predictions."
+
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "update_system_prompt",
+            "description": "Predict the outcome of the final boss battle for Slay the Spire",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "analysis": {
+                        "type": "string",
+                        "description": "An analysis of how to update the system prompt, based off the feedback"
+                    },
+                    "new_prompt": {
+                        "type": "string",
+                        "description": "An updated system prompt",
+                    }
+                },
+                "required": ["analysis", "new_prompt"]
+            }
+        }
+    }
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+            {"role": "user", "content": [{"type": "text", "text": prompt}]},
+        ],
+        tools=[tool],
+        tool_choice="required"
+    )
+
+    return response.choices[0].message.tool_calls[0].function.arguments

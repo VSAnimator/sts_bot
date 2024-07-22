@@ -1,6 +1,8 @@
 import json
 import dataset
 
+include_master_deck = True
+
 def process_event(event, play_id):
     # Initialize state variables
     current_deck = ["Strike_R", "Strike_R", "Strike_R", "Strike_R", "Strike_R", "Defend_R", "Defend_R", "Defend_R", "Defend_R", "Bash"]
@@ -21,8 +23,8 @@ def process_event(event, play_id):
         states.append({
             "play_id": play_id,
             "floor": 0,
-            "deck": json.dumps(current_deck.copy()),
-            "relics": json.dumps(current_relics.copy()),
+            "deck": json.dumps(sorted(current_deck.copy())),
+            "relics": json.dumps(sorted(current_relics.copy())),
             "potions": json.dumps(current_potions.copy()),
             "current_hp": event["current_hp_per_floor"][0] if event["current_hp_per_floor"] else 0,
             "max_hp": event["max_hp_per_floor"][0] if event["max_hp_per_floor"] else 0,
@@ -31,6 +33,7 @@ def process_event(event, play_id):
             "victory": "victory" in event and event["victory"],
             "score": event["score"] if "score" in event else "N/A",
             "max_floor": event["floor_reached"], # Key info for SARSA/value iteration
+            "master_deck": json.dumps(sorted(event["master_deck"])) if include_master_deck else "N/A",
         })
     except Exception as e:
         print("Error in initial state")
@@ -52,7 +55,9 @@ def process_event(event, play_id):
                 "actions_taken": [],
                 "ascension_level": ascension_level,
                 "victory": "victory" in event and event["victory"],
-                "score": event["score"] if "score" in event else "N/A"
+                "score": event["score"] if "score" in event else "N/A",
+                "max_floor": event["floor_reached"],
+                "master_deck": json.dumps(sorted(event["master_deck"])) if include_master_deck else "N/A",
             }
         except Exception as e:
             print("Error in floor: ", floor)
@@ -247,7 +252,8 @@ def process_json_file(json_file, db_url):
             # Check if the playthrough was a winning run with Ironclad
             if event["character_chosen"] == "IRONCLAD":
                 #if event["victory"] or victory_count > loss_count:
-                if event["floor_reached"] > 10 and event["ascension_level"] % 10 == 0:
+                if event["floor_reached"] > 49 and event["ascension_level"] == 20:
+                #if event["floor_reached"] > 10 and event["ascension_level"] % 10 == 0:
                     states = process_event(event, play_id)
                     # Increment trajectory and state counts
                     trajectory_count += 1
