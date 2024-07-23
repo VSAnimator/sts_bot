@@ -542,6 +542,7 @@ def win_prediction(system_prompt, state, similar_states, run_id):
 
     prompt = "State to evaluate: " + json.dumps(state) + "\n" + "Similar states: " + str(similar_states) + "\n" + "Return both 'thought_process' and 'predicted_outcome'" 
 
+    '''
     tool = {
         "type": "function",
         "function": {
@@ -554,28 +555,54 @@ def win_prediction(system_prompt, state, similar_states, run_id):
                         "type": "string",
                         "description": "A step-by-step thought process on how to evaluate the win probability of the state"
                     },
+                },
+                "required": ["thought_process"]
+            }
+        }
+    }
+    '''
+
+    tool2 = {
+        "type": "function",
+        "function": {
+            "name": "predict_outcome",
+            "description": "Predict the outcome of the final boss battle for Slay the Spire",
+            "parameters": {
+                "type": "object",
+                "properties": {
                     "predicted_outcome": {
                         "type": "string",
                         "description": "0 for a loss, 1 for a win",
                         "enum": ["0", "1"]
                     }
                 },
-                "required": ["thought_process", "predicted_outcome"]
+                "required": ["predicted_outcome"]
             }
         }
     }
 
-    response = client.chat.completions.create(
+    response1 = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
             {"role": "user", "content": [{"type": "text", "text": prompt}]},
         ],
-        tools=[tool],
+    )
+
+    # Append response to conversation, call tool2 to get final prediction
+    response2 = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+            {"role": "user", "content": [{"type": "text", "text": prompt}]},
+            {"role": "assistant", "content": response1.choices[0].message.content},
+            {"role": "user", "content": [{"type": "text", "text": "Given the thought process, predict the outcome of the final boss battle for Slay the Spire"}]}
+        ],
+        tools=[tool2],
         tool_choice="required"
     )
 
-    return system_prompt, response.choices[0].message.tool_calls[0].function.arguments
+    return system_prompt, {"thought_process": response1.choices[0].message.content, "predicted_outcome": ast.literal_eval(response2.choices[0].message.tool_calls[0].function.arguments)['predicted_outcome']}
 
 def update_win_prediction_prompt(prompt, state, similar_states, response, feedback, run_id):
     client = OpenAI(

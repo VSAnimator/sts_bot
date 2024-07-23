@@ -67,7 +67,8 @@ for elem in filenames:
         if final_state['game_state']['screen_state']['victory']:
             win_count += 1
         floor_reached.append(final_state['game_state']['floor'])
-    continue
+    else:
+        continue
 
     # What is the key information we want to store? Just an overview of the key run details we want to filter by
     final_state_info = {
@@ -121,11 +122,6 @@ for elem in filenames:
         for key in state_dict:
             if isinstance(state_dict[key], list):
                 state_dict[key] = str(state_dict[key])
-
-        if stripped_response is not None:
-            # Insert in eval
-            eval_dict = ast.literal_eval(stripped_response)
-            state_dict.update(eval_dict)
 
         print("To insert", state_dict)
         # Insert the state
