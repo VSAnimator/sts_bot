@@ -33,15 +33,38 @@ relic_info = json.load(open("info/relics.json"))
 ironclad_card_info = {key.lower(): value for key, value in ironclad_card_info.items()}
 relic_info = {key.lower(): value for key, value in relic_info.items()}
 
+potion_names = {'blessing of the forge', 'bottled miracle', 'elixir', 'liquid bronze', 'gambler\'s brew', 'essence of steel', 'distilled chaos', 'liquid memories', 'heart of iron', 'ghost in a jar', 'essence of darkness', 'ambrosia', 'fruit juice', 'snecko oil', 'fairy in a bottle', 'smoke bomb', 'entropic brew'}
+
 def parse_game_state(game_state_json):
     global ironclad_card_info, relic_info
     game_state = json.loads(game_state_json)
     
     if not game_state.get('in_game'):
-        return "Not in game"
+        return {"available_commands": ["start"]}, None
     
     def generate_card_key(card):
         return f"{card['id']}_upg{card['upgrades']}"
+
+    # If we have no empty potion slots, remove potions from choices
+    # Check if potions are full
+    potions_full = True
+    if 'potions' in game_state['game_state']:
+        for elem in game_state['game_state']['potions']:
+            if elem['id'] == "Potion Slot":
+                potions_full = False
+    # Check for choices to remove
+    if potions_full:
+        to_remove = []
+        if 'choice_list' in game_state['game_state']:
+            for elem in game_state['game_state']['choice_list']:
+                if ('potion' in elem or elem in potion_names) and len(game_state['game_state']['potions']) >= 3:
+                    to_remove.append(elem)
+        # Remove elems from 'choice_list'
+        for elem in to_remove:
+            game_state['game_state']['choice_list'].remove(elem)
+    # Now if choice_list is empty, remove "choose" from available commands
+    if 'choice_list' in game_state['game_state'] and len(game_state['game_state']['choice_list']) == 0:
+        game_state['available_commands'].remove('choose')
     
     parsed_state = {
         'available_commands': game_state.get('available_commands', []),
@@ -117,7 +140,7 @@ def parse_game_state(game_state_json):
     potion_info = {potion['id']: potion for potion in game_state['game_state'].get('potions', [])}
 
     # Remove 'key', 'click', 'wait', 'state' from available commands
-    parsed_state['available_commands'] = [command for command in parsed_state['available_commands'] if command not in ['key', 'click', 'wait', 'state', 'return', 'cancel', 'potion', 'recall']]
+    parsed_state['available_commands'] = [command for command in parsed_state['available_commands'] if command not in ['load', 'key', 'click', 'wait', 'state', 'return', 'cancel', 'potion', 'recall']]
     
     shared_info = {
         'cards': card_info,

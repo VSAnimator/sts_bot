@@ -333,6 +333,8 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 # Start from the deck analysis
                 human_analysis_messages = copy.deepcopy(deck_analysis_messages)
 
+                if len(similar_states) == 2 and similar_states[1] is None:
+                    similar_states = similar_states[0]
                 # Reason across the similar states to make a decision
                 if len(similar_states) == 2:
                     # We have wins and losses
@@ -621,7 +623,127 @@ def update_win_prediction_prompt(prompt, state, similar_states, response, feedba
         "type": "function",
         "function": {
             "name": "update_system_prompt",
+            "description": "Update the system prompt to address the feedback",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "analysis": {
+                        "type": "string",
+                        "description": "An analysis of how to update the system prompt, based off the feedback"
+                    },
+                    "new_prompt": {
+                        "type": "string",
+                        "description": "An updated system prompt",
+                    }
+                },
+                "required": ["analysis", "new_prompt"]
+            }
+        }
+    }
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+            {"role": "user", "content": [{"type": "text", "text": prompt}]},
+        ],
+        tools=[tool],
+        tool_choice="required"
+    )
+
+    return response.choices[0].message.tool_calls[0].function.arguments
+
+def state_comparison(system_prompt, state1, state2, run_id):
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"win_pred_{run_id}"
+        }
+    )
+
+    prompt = "State 1: " + json.dumps(state1) + "\n" + "State 2: " + json.dumps(state2) + "\n" + "Return both 'thought_process' and 'predicted_outcome'" 
+
+    '''
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "predict_outcome",
             "description": "Predict the outcome of the final boss battle for Slay the Spire",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "thought_process": {
+                        "type": "string",
+                        "description": "A step-by-step thought process on how to evaluate the win probability of the state"
+                    },
+                },
+                "required": ["thought_process"]
+            }
+        }
+    }
+    '''
+
+    tool2 = {
+        "type": "function",
+        "function": {
+            "name": "predict_outcome",
+            "description": "Predict the outcome of the final boss battle for Slay the Spire",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "predicted_outcome": {
+                        "type": "string",
+                        "description": "1 if state 1 is better, or -1 if state 2 is better",
+                        "enum": ["1", "-1", "0"]
+                    }
+                },
+                "required": ["predicted_outcome"]
+            }
+        }
+    }
+
+    response1 = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+            {"role": "user", "content": [{"type": "text", "text": prompt}]},
+        ],
+    )
+
+    # Append response to conversation, call tool2 to get final prediction
+    response2 = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+            {"role": "user", "content": [{"type": "text", "text": prompt}]},
+            {"role": "assistant", "content": response1.choices[0].message.content},
+            {"role": "user", "content": [{"type": "text", "text": "Given the thought process, predict which state will do better in the final boss battle for Slay the Spire, or if both states will perform equally well. Output 1 if state 1 is better, or -1 if state 2 is better."}]}
+        ],
+        tools=[tool2],
+        tool_choice="required"
+    )
+
+    return system_prompt, {"thought_process": response1.choices[0].message.content, "predicted_outcome": ast.literal_eval(response2.choices[0].message.tool_calls[0].function.arguments)['predicted_outcome']}
+
+def update_state_comparison_prompt(prompt, state1, state2, response, feedback, run_id):
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"win_pred_grad_{run_id}"
+        }
+    )
+
+    system_prompt = "You are a superhuman AI that learns from its own mistakes by updating its system prompt. You previously made predictions comparing outcomes of pairs of states from Slay the Spire, and you will be given feedback on these previous predictions. Using the feedback on prior decisions, you will then describe how to update your system prompt to improve your future predictions. Don't make the system prompt overly long."
+
+    prompt = "Original prompt: " + prompt + "\n" + "State 1: " + json.dumps(state1) + "\n" + "State 2: " + json.dumps(state2) + "\nYour evaluation: " + response + "\n" + "Feedback on your evaluation:" + feedback + "\n Describe how to update your system prompt to improve your future predictions."
+
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "update_system_prompt",
+            "description": "Update the system prompt to address the feedback",
             "parameters": {
                 "type": "object",
                 "properties": {

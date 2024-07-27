@@ -15,7 +15,7 @@ import string
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
-TIMEOUT_THRESHOLD = 5 * 60 * 100 # 5 minutes
+TIMEOUT_THRESHOLD = 5 * 60 # 5 minutes
 
 exception_count = 0
 
@@ -26,15 +26,15 @@ def create_seed():
     char_string = char_string.replace('O', '')
     return ''.join(np.random.choice(list(char_string)) for _ in range(len("5F68Z78NR2FSF")))
 
+new_run = False
 def receive_messages(sock, send_message_func):
-    global exception_count
+    global exception_count, new_run
     while True:
         log_filename = f"runs/{time.time()}.txt"
         raw_log_filename = f"runs_raw/{time.time()}.txt"
 
         with open(log_filename, "w") as log_file, open(raw_log_filename, "w") as raw_log_file:
             last_activity_time = time.time()
-
             new_run = False
             while not new_run:
                 try:
@@ -71,10 +71,12 @@ def receive_messages(sock, send_message_func):
                     # Then continue
                     exception_count += 1
                     state_message = "state"
+                    '''
                     if exception_count == 5:
                         # Maybe we just need to start a new game
                         state_message = "start ironclad 10 " + create_seed()
                         new_run = True
+                    '''
                     encoded_state_message = state_message.encode('utf-8')
                     sock.sendall(len(encoded_state_message).to_bytes(4, byteorder='big'))
                     sock.sendall(encoded_state_message)
@@ -94,6 +96,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
     global act_combats_completed
     global curr_act
     global next_choice_card
+    global new_run
     # Try parsing game state
     parsed_state, shared_info = parse_game_state('{"' + received_message)
     print(parsed_state)
@@ -105,6 +108,14 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
     # Write the parsed state to log file, and the raw message to raw log file
     log_file.write(str(parsed_state) + "\n")
     raw_log_file.write(received_message + "\n")
+    if "start" in parsed_state['available_commands']:
+        new_run = True
+        response = "start ironclad 10 " + create_seed()
+        encoded_message = response.encode('utf-8')
+        sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
+        sock.sendall(encoded_message)
+        last_response = response
+        return
     parsed_state['act_combats_completed'] = act_combats_completed # This is valuable information for the bot
     if "autoplay" in parsed_state['available_commands']:
         response = "autoplay"
@@ -208,7 +219,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
                 # Get time from log file name
                 time_str = log_file.name.split('/')[-1].split('.')[0]
                 response = get_text_v3(parsed_state, time_str, entries)
-            except Exception as e:
+            except Exception as e: # We should never hit this...
                 print("Exception: ", e)
                 response = parsed_state['available_commands'][0]
                 if response == 'choose':
@@ -241,7 +252,7 @@ def main():
         return
 
     # Send the initial message
-    initial_message = "state" #"start ironclad 10"
+    initial_message = "start ironclad 10 " + create_seed()
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

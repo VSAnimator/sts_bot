@@ -13,7 +13,7 @@ state_table = db['states']
 
 # Insert all runs in "runs" folder
 # Get list of filenames from "runs/"
-filenames = os.listdir("runs/")
+filenames = sorted(os.listdir("runs/"))
 valid_count = 0
 win_count = 0
 floor_reached = []
@@ -30,31 +30,7 @@ for elem in filenames:
     if len(trajectory) < 2:
         continue
 
-    # Make a file to write to
-    write_file = open("runs_processed/" + filename + ".txt", "w")
-
-    # Create tool
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "store_state_action_rating",
-                "description": "Store rating of bot action at a given state",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "rating": {
-                            "type": "string",
-                            "description": "Rating the bot action (-1 for bad, 1 for good, 0 for neutral)",
-                            "enum": ["-1", "0", "1"]
-                        },
-                        "best_action": {"type": "string"},
-                    },
-                    "required": ["rating", "best_action"],
-                },
-            },
-        }
-    ]
+    trajectory = [elem for elem in trajectory if '\'start\'' not in elem]
 
     try:
         final_state = ast.literal_eval(trajectory[-2])

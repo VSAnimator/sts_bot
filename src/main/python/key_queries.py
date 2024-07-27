@@ -131,7 +131,7 @@ def calculate_similarity(state, current_state):
 '''
 
 rl_mode = False
-negative_examples = True
+negative_examples = False
 
 def counts_to_ratios(card_count_list, current_choice_list):
     #print("RL card counts", card_count_list)

@@ -5,7 +5,7 @@ import sys
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
-TIMEOUT_THRESHOLD = 10
+TIMEOUT_THRESHOLD = 1000
 
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,7 +17,7 @@ def main():
         return
 
     # Send the initial message
-    initial_message = "start ironclad"
+    initial_message = "load startstates/4ZNJ22MUNT7DX/06/saves/IRONCLAD.autosave"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)
@@ -29,7 +29,7 @@ def main():
     while True:
         try:
             # Send "state" message every second
-            if time.time() - last_state_time >= 1:
+            if time.time() - last_state_time >= 100:
                 state_message = "state"
                 encoded_state_message = state_message.encode('utf-8')
                 sock.sendall(len(encoded_state_message).to_bytes(4, byteorder='big'))
