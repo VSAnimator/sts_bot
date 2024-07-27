@@ -1,0 +1,51 @@
+Bandage Up	Skill	Uncommon	0	Heal 4 (6) HP. Exhaust.	
+Blind	Skill	Uncommon	0	Apply 2 Weak.	Apply 2 Weak to ALL enemies.
+Dark Shackles	Skill	Uncommon	0	Enemy loses 9 (15) Strength this turn. Exhaust.	
+Deep Breath	Skill	Uncommon	0	Shuffle your discard pile into your draw pile. Draw 1 card.	Shuffle your discard pile into your draw pile. Draw 2 cards.
+Discovery	Skill	Uncommon	1	Choose 1 of 3 random cards to add into your hand. It costs 0 this turn. Exhaust.	Choose 1 of 3 random cards to add into your hand. It costs 0 this turn.
+Dramatic Entrance	Attack	Uncommon	0	Innate. Deal 8 (12) damage to ALL enemies. Exhaust.	
+Enlightenment	Skill	Uncommon	0	Reduce the cost of all cards in your hand to 1 this turn.	Reduce the cost of all cards in your hand to 1 this combat.
+Finesse	Skill	Uncommon	0	Gain 2 (4) Block. Draw 1 card.	
+Flash of Steel	Attack	Uncommon	0	Deal 3 (6) damage. Draw 1 card.	
+Forethought	Skill	Uncommon	0	Put a card from your hand to the bottom of your draw pile. It costs 0 until played.	Put any number of cards from your hand to the bottom of your draw pile. They cost 0 until played.
+Good Instincts	Skill	Uncommon	0	Gain 6 (9) Block.	
+Impatience	Skill	Uncommon	0	If you have no Attacks in your hand, draw 2 (3) cards.	
+Jack of All Trades	Skill	Uncommon	0	Add 1 random Colorless card into your hand. Exhaust.	Add 2 random Colorless cards into your hand. Exhaust.
+Madness	Skill	Uncommon	1 (0)	Reduce the cost of a random card in your hand to 0 this combat. Exhaust.	
+Mind Blast	Attack	Uncommon	2 (1)	Innate. Deal damage equal to the number of cards in your draw pile.	
+Panacea	Skill	Uncommon	0	Gain 1 (2) Artifact. Exhaust.	
+Panic Button	Skill	Uncommon	0	Gain 30 (40) Block. You cannot gain Block from cards for 2 turns. Exhaust.	
+Purity	Skill	Uncommon	0	Exhaust up to 3 (5) cards in your hand. Exhaust.	
+Swift Strike	Attack	Uncommon	0	Deal 7 (10) damage.	
+Trip	Skill	Uncommon	0	Apply 2 Vulnerable.	Apply 2 Vulnerable to ALL enemies.
+Apotheosis	Skill	Rare	2 (1)	Upgrade ALL your cards for the rest of combat. Exhaust.	
+Chrysalis	Skill	Rare	2	Shuffle 3 (5) random Skills into your draw pile. They cost 0 this combat. Exhaust.	
+Hand of Greed	Attack	Rare	2	Deal 20 (25) damage. If Fatal, gain 20 (25) Gold.	
+Magnetism	Power	Rare	2 (1)	At the start of your turn, add a random Colorless card into your hand.	
+Master of Strategy	Skill	Rare	0	Draw 3 (4) cards. Exhaust.	
+Mayhem	Power	Rare	2 (1)	At the start of your turn, play the top card of your draw pile.	
+Metamorphosis	Skill	Rare	2	Shuffle 3 (5) random Attacks into your draw pile. They cost 0 this combat. Exhaust.	
+Panache	Power	Rare	0	Every time you play 5 cards in a single turn, deal 10 (14) damage to ALL enemies.	
+Sadistic Nature	Power	Rare	0	Whenever you apply a debuff to an enemy, they take 5 (7) damage.	
+Secret Technique	Skill	Rare	0	Put a Skill from your draw pile into your hand. Exhaust.	Put a Skill from your draw pile into your hand.
+Secret Weapon	Skill	Rare	0	Put an Attack from your draw pile into your hand. Exhaust.	Put an Attack from your draw pile into your hand.
+The Bomb	Skill	Rare	2	At the end of 3 turns, deal 40 (50) damage to ALL enemies.	
+Thinking Ahead	Skill	Rare	0	Draw 2 cards. Put a card from your hand on top of your draw pile. Exhaust.	Draw 2 cards. Put a card from your hand on top of your draw pile.
+Transmutation	Skill	Rare	X	Add X random Colorless cards into your hand. They cost 0 this turn. Exhaust.	Add X random Upgraded Colorless cards into your hand. They cost 0 this turn. Exhaust.
+Violence	Skill	Rare	0	Put 3 (4) random Attacks from your draw pile into your hand. Exhaust.	
+Apparition	Skill	Special	1	Ethereal. Gain 1 Intangible. Exhaust.	Gain 1 Intangible. Exhaust.
+Become Almighty	Power	Special	Unplayable	Gain 3 (4) Strength.	
+Beta	Skill	Special	2 (1)	Shuffle an Omega into your draw pile. Exhaust.	
+Bite	Attack	Special	1	Deal 7 (8) damage. Heal 2 (3) HP.	
+Expunger	Attack	Special	1	Deal 9 (15) damage X times.	
+Fame and Fortune	Skill	Special	Unplayable	Gain 25 (30) Gold.	
+Insight	Skill	Special	0	Retain. Draw 2 (3) cards. Exhaust.	
+J.A.X.	Skill	Special	0	Lose 3 HP. Gain 2 (3) Strength.	
+Live Forever	Power	Special	Unplayable	Gain 6 (8) Plated Armor.	
+Miracle	Skill	Special	0	Retain. Gain [W]. Exhaust.	Retain. Gain [W] [W]. Exhaust.
+Omega	Power	Special	3	At the end of your turn, deal 50 (60) damage to ALL enemies.	
+Ritual Dagger	Attack	Special	1	Deal 15 damage. If Fatal, permanently increase this card's damage by 3 (5). Exhaust.	
+Safety	Skill	Special	1	Retain. Gain 12 (16) Block. Exhaust.	
+Shiv	Attack	Special	0	Deal 4 (6) damage. Exhaust.	
+Smite	Attack	Special	1	Retain. Deal 12 (16) damage. Exhaust.	
+Through Violence	Attack	Special	0	Retain. Deal 20 (30) damage. Exhaust.	

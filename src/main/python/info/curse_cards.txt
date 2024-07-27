@@ -1,0 +1,14 @@
+Clumsy	Curse	Curse	Unplayable	Unplayable. Ethereal.	
+Decay	Curse	Curse	Unplayable	Unplayable. At the end of your turn, take 2 damage.	
+Doubt	Curse	Curse	Unplayable	Unplayable. At the end of your turn, gain 1 Weak.	
+Injury	Curse	Curse	Unplayable	Unplayable.	
+Normality	Curse	Curse	Unplayable	Unplayable. While in hand, you cannot play more than 3 cards this turn.	
+Pain	Curse	Curse	Unplayable	Unplayable. While in hand, lose 1 HP whenever you play another card.	
+Parasite	Curse	Curse	Unplayable	Unplayable. If transformed or removed from your deck, lose 3 Max HP.	
+Regret	Curse	Curse	Unplayable	Unplayable. At the end of your turn, lose HP equal to the number of cards in your hand.	
+Shame	Curse	Curse	Unplayable	Unplayable. At the end of your turn, gain 1 Frail.	
+Writhe	Curse	Curse	Unplayable	Unplayable. Innate.	
+Ascender's Bane	Curse	Special	Unplayable	Unplayable. Ethereal. Cannot be removed from your deck.	
+Curse of the Bell	Curse	Special	Unplayable	Unplayable. Cannot be removed from your deck.	
+Necronomicurse	Curse	Special	Unplayable	Unplayable. There is no escape from this Curse.	
+Pride	Curse	Special	1	Innate. At the end of your turn, put a copy of this card on top of your draw pile. Exhaust.	

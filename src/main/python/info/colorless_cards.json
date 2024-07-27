@@ -1,0 +1,314 @@
+{
+    "bandage up": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Heal 4 (6) HP. Exhaust."
+    },
+    "blind": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Apply 2 Weak."
+    },
+    "dark shackles": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Enemy loses 9 (15) Strength this turn. Exhaust."
+    },
+    "deep breath": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Shuffle your discard pile into your draw pile. Draw 1 card."
+    },
+    "discovery": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Choose 1 of 3 random cards to add into your hand. It costs 0 this turn. Exhaust."
+    },
+    "dramatic entrance": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Innate. Deal 8 (12) damage to ALL enemies. Exhaust."
+    },
+    "enlightenment": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Reduce the cost of all cards in your hand to 1 this turn."
+    },
+    "finesse": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Gain 2 (4) Block. Draw 1 card."
+    },
+    "flash of steel": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Deal 3 (6) damage. Draw 1 card."
+    },
+    "forethought": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Put a card from your hand to the bottom of your draw pile. It costs 0 until played."
+    },
+    "good instincts": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Gain 6 (9) Block."
+    },
+    "impatience": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "If you have no Attacks in your hand, draw 2 (3) cards."
+    },
+    "jack of all trades": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Add 1 random Colorless card into your hand. Exhaust."
+    },
+    "madness": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "upgraded_cost": "0",
+        "effect": "Reduce the cost of a random card in your hand to 0 this combat. Exhaust."
+    },
+    "mind blast": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "upgraded_cost": "1",
+        "effect": "Innate. Deal damage equal to the number of cards in your draw pile."
+    },
+    "panacea": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Gain 1 (2) Artifact. Exhaust."
+    },
+    "panic button": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Gain 30 (40) Block. You cannot gain Block from cards for 2 turns. Exhaust."
+    },
+    "purity": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Exhaust up to 3 (5) cards in your hand. Exhaust."
+    },
+    "swift strike": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Deal 7 (10) damage."
+    },
+    "trip": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Apply 2 Vulnerable."
+    },
+    "apotheosis": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "2",
+        "upgraded_cost": "1",
+        "effect": "Upgrade ALL your cards for the rest of combat. Exhaust."
+    },
+    "chrysalis": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Shuffle 3 (5) random Skills into your draw pile. They cost 0 this combat. Exhaust."
+    },
+    "hand of greed": {
+        "type": "Attack",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Deal 20 (25) damage. If Fatal, gain 20 (25) Gold."
+    },
+    "magnetism": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "2",
+        "upgraded_cost": "1",
+        "effect": "At the start of your turn, add a random Colorless card into your hand."
+    },
+    "master of strategy": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Draw 3 (4) cards. Exhaust."
+    },
+    "mayhem": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "2",
+        "upgraded_cost": "1",
+        "effect": "At the start of your turn, play the top card of your draw pile."
+    },
+    "metamorphosis": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Shuffle 3 (5) random Attacks into your draw pile. They cost 0 this combat. Exhaust."
+    },
+    "panache": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Every time you play 5 cards in a single turn, deal 10 (14) damage to ALL enemies."
+    },
+    "sadistic nature": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Whenever you apply a debuff to an enemy, they take 5 (7) damage."
+    },
+    "secret technique": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Put a Skill from your draw pile into your hand. Exhaust."
+    },
+    "secret weapon": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Put an Attack from your draw pile into your hand. Exhaust."
+    },
+    "the bomb": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "At the end of 3 turns, deal 40 (50) damage to ALL enemies."
+    },
+    "thinking ahead": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Draw 2 cards. Put a card from your hand on top of your draw pile. Exhaust."
+    },
+    "transmutation": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "X",
+        "effect": "Add X random Colorless cards into your hand. They cost 0 this turn. Exhaust."
+    },
+    "violence": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Put 3 (4) random Attacks from your draw pile into your hand. Exhaust."
+    },
+    "apparition": {
+        "type": "Skill",
+        "rarity": "Special",
+        "cost": "1",
+        "effect": "Ethereal. Gain 1 Intangible. Exhaust."
+    },
+    "become almighty": {
+        "type": "Power",
+        "rarity": "Special",
+        "cost": "Unplayable",
+        "effect": "Gain 3 (4) Strength."
+    },
+    "beta": {
+        "type": "Skill",
+        "rarity": "Special",
+        "cost": "2",
+        "upgraded_cost": "1",
+        "effect": "Shuffle an Omega into your draw pile. Exhaust."
+    },
+    "bite": {
+        "type": "Attack",
+        "rarity": "Special",
+        "cost": "1",
+        "effect": "Deal 7 (8) damage. Heal 2 (3) HP."
+    },
+    "expunger": {
+        "type": "Attack",
+        "rarity": "Special",
+        "cost": "1",
+        "effect": "Deal 9 (15) damage X times."
+    },
+    "fame and fortune": {
+        "type": "Skill",
+        "rarity": "Special",
+        "cost": "Unplayable",
+        "effect": "Gain 25 (30) Gold."
+    },
+    "insight": {
+        "type": "Skill",
+        "rarity": "Special",
+        "cost": "0",
+        "effect": "Retain. Draw 2 (3) cards. Exhaust."
+    },
+    "j.a.x.": {
+        "type": "Skill",
+        "rarity": "Special",
+        "cost": "0",
+        "effect": "Lose 3 HP. Gain 2 (3) Strength."
+    },
+    "live forever": {
+        "type": "Power",
+        "rarity": "Special",
+        "cost": "Unplayable",
+        "effect": "Gain 6 (8) Plated Armor."
+    },
+    "miracle": {
+        "type": "Skill",
+        "rarity": "Special",
+        "cost": "0",
+        "effect": "Retain. Gain [W]. Exhaust."
+    },
+    "omega": {
+        "type": "Power",
+        "rarity": "Special",
+        "cost": "3",
+        "effect": "At the end of your turn, deal 50 (60) damage to ALL enemies."
+    },
+    "ritual dagger": {
+        "type": "Attack",
+        "rarity": "Special",
+        "cost": "1",
+        "effect": "Deal 15 damage. If Fatal, permanently increase this card's damage by 3 (5). Exhaust."
+    },
+    "safety": {
+        "type": "Skill",
+        "rarity": "Special",
+        "cost": "1",
+        "effect": "Retain. Gain 12 (16) Block. Exhaust."
+    },
+    "shiv": {
+        "type": "Attack",
+        "rarity": "Special",
+        "cost": "0",
+        "effect": "Deal 4 (6) damage. Exhaust."
+    },
+    "smite": {
+        "type": "Attack",
+        "rarity": "Special",
+        "cost": "1",
+        "effect": "Retain. Deal 12 (16) damage. Exhaust."
+    },
+    "through violence": {
+        "type": "Attack",
+        "rarity": "Special",
+        "cost": "0",
+        "effect": "Retain. Deal 20 (30) damage. Exhaust."
+    }
+}

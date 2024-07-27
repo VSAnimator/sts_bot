@@ -1,0 +1,75 @@
+Bash	Attack	Basic	2	Deal 8 (10) damage. Apply 2 (3) Vulnerable.	
+Defend	Skill	Basic	1	Gain 5 (8) Block.	
+Strike	Attack	Basic	1	Deal 6 (9) damage.	
+Anger	Attack	Common	0	Deal 6 (8) damage. Add a copy of this card into your discard pile.	
+Armaments	Skill	Common	1	Gain 5 Block. Upgrade a card in your hand for the rest of combat.	Gain 5 Block. Upgrade all cards in your hand for the rest of combat.
+Body Slam	Attack	Common	1 (0)	Deal damage equal to your Block.	
+Clash	Attack	Common	0	Can only be played if every card in your hand is an Attack. Deal 14 (18) damage.	
+Cleave	Attack	Common	1	Deal 8 (11) damage to ALL enemies.	
+Clothesline	Attack	Common	2	Deal 12 (14) damage. Apply 2 (3) Weak.	
+Flex	Skill	Common	0	Gain 2 (4) Strength. At the end of this turn, lose 2 (4) Strength.	
+Havoc	Skill	Common	1 (0)	Play the top card of your draw pile and Exhaust it.	
+Headbutt	Attack	Common	1	Deal 9 (12) damage. Put a card from your discard pile on top of your draw pile.	
+Heavy Blade	Attack	Common	2	Deal 14 damage. Strength affects this card 3 (5) times.	
+Iron Wave	Attack	Common	1	Gain 5 (7) Block. Deal 5 (7) damage.	
+Perfected Strike	Attack	Common	2	Deal 6 damage. Deals 2 (3) additional damage for ALL your cards containing "Strike".	
+Pommel Strike	Attack	Common	1	Deal 9 damage. Draw 1 card.	Deal 10 damage. Draw 2 cards.
+Shrug It Off	Skill	Common	1	Gain 8 (11) Block. Draw 1 card.	
+Sword Boomerang	Attack	Common	1	Deal 3 damage to a random enemy 3 (4) times.	
+Thunderclap	Attack	Common	1	Deal 4 (7) damage and apply 1 Vulnerable to ALL enemies.	
+True Grit	Skill	Common	1	Gain 7 Block. Exhaust 1 card at random.	Gain 9 Block. Exhaust 1 card.
+Twin Strike	Attack	Common	1	Deal 5 (7) damage twice.	
+Warcry	Skill	Common	0	Draw 1 card. Put a card from your hand onto the top of your draw pile. Exhaust.	Draw 2 cards. Put a card from your hand onto the top of your draw pile. Exhaust.
+Wild Strike	Attack	Common	1	Deal 12 (17) damage. Shuffle a Wound into your draw pile.	
+Battle Trance	Skill	Uncommon	0	Draw 3 (4) cards. You cannot draw additional cards this turn.	
+Blood for Blood	Attack	Uncommon	4 (3)	Costs 1 less [R] for each time you lose HP this combat. Deal 18 (22) damage.	
+Bloodletting	Skill	Uncommon	0	Lose 3 HP. Gain [R] [R].	Lose 3 HP. Gain [R] [R] [R].
+Burning Pact	Skill	Uncommon	1	Exhaust 1 card. Draw 2 (3) cards.	
+Carnage	Attack	Uncommon	2	Ethereal. Deal 20 (28) damage.	
+Combust	Power	Uncommon	1	At the end of your turn, lose 1 HP and deal 5 (7) damage to ALL enemies.	
+Dark Embrace	Power	Uncommon	2 (1)	Whenever a card is Exhausted, draw 1 card.	
+Disarm	Skill	Uncommon	1	Enemy loses 2 (3) Strength. Exhaust.	
+Dropkick	Attack	Uncommon	1	Deal 5 (8) damage. If the enemy has Vulnerable, gain [R] and draw 1 card.	
+Dual Wield	Skill	Uncommon	1	Choose an Attack or Power card. Add a copy of that card into your hand.	Choose an Attack or Power card. Add 2 copies of that card into your hand.
+Entrench	Skill	Uncommon	2 (1)	Double your Block.	
+Evolve	Power	Uncommon	1	Whenever you draw a Status card, draw 1 card.	Whenever you draw a Status card, draw 2 cards.
+Feel No Pain	Power	Uncommon	1	Whenever a card is Exhausted, gain 3 (4) Block.	
+Fire Breathing	Power	Uncommon	1	Whenever you draw a Status or Curse card, deal 6 (10) damage to ALL enemies.	
+Flame Barrier	Skill	Uncommon	2	Gain 12 (16) Block. Whenever you are attacked this turn, deal 4 (6) damage back.	
+Ghostly Armor	Skill	Uncommon	1	Ethereal. Gain 10 (13) Block.	
+Hemokinesis	Attack	Uncommon	1	Lose 2 HP. Deal 15 (20) damage.	
+Infernal Blade	Skill	Uncommon	1 (0)	Add a random Attack into your hand. It costs 0 this turn. Exhaust.	
+Inflame	Power	Uncommon	1	Gain 2 (3) Strength.	
+Intimidate	Skill	Uncommon	0	Apply 1 (2) Weak to ALL enemies. Exhaust.	
+Metallicize	Power	Uncommon	1	At the end of your turn, gain 3 (4) Block.	
+Power Through	Skill	Uncommon	1	Add 2 Wounds into your hand. Gain 15 (20) Block.	
+Pummel	Attack	Uncommon	1	Deal 2 damage 4 (5) times. Exhaust.	
+Rage	Skill	Uncommon	0	Whenever you play an Attack this turn, gain 3 (5) Block.	
+Rampage	Attack	Uncommon	1	Deal 8 damage. Increase this card's damage by 5 (8) this combat.	
+Reckless Charge	Attack	Uncommon	0	Deal 7 (10) damage. Shuffle a Dazed into your draw pile.	
+Rupture	Power	Uncommon	1	Whenever you lose HP from a card, gain 1 (2) Strength.	
+Searing Blow	Attack	Uncommon	2	Deal 12 (16) damage. Can be Upgraded any number of times.	
+Second Wind	Skill	Uncommon	1	Exhaust all non-Attack cards in your hand. Gain 5 (7) Block for each card Exhausted.	
+Seeing Red	Skill	Uncommon	1 (0)	Gain [R] [R]. Exhaust.	
+Sentinel	Skill	Uncommon	1	Gain 5 Block. If this card is Exhausted, gain [R] [R].	Gain 8 Block. If this card is Exhausted, gain [R] [R] [R].
+Sever Soul	Attack	Uncommon	2	Exhaust all non-Attack cards in your hand. Deal 16 (22) damage.	
+Shockwave	Skill	Uncommon	2	Apply 3 (5) Weak and Vulnerable to ALL enemies. Exhaust.	
+Spot Weakness	Skill	Uncommon	1	If the enemy intends to attack, gain 3 (4) Strength.	
+Uppercut	Attack	Uncommon	2	Deal 13 damage. Apply 1 (2) Weak. Apply 1 (2) Vulnerable.	
+Whirlwind	Attack	Uncommon	X	Deal 5 (8) damage to ALL enemies X times.	
+Barricade	Power	Rare	3 (2)	Block is not removed at the start of your turn.	
+Berserk	Power	Rare	0	Gain 2 (1) Vulnerable. At the start of your turn, gain [R].	
+Bludgeon	Attack	Rare	3	Deal 32 (42) damage.	
+Brutality	Power	Rare	0	At the start of your turn, lose 1 HP and draw 1 card.	Innate. At the start of your turn, lose 1 HP and draw 1 card.
+Corruption	Power	Rare	3 (2)	Skills cost 0. Whenever you play a Skill, Exhaust it.	
+Demon Form	Power	Rare	3	At the start of your turn, gain 2 (3) Strength.	
+Double Tap	Skill	Rare	1	This turn, your next Attack is played twice.	This turn, your next 2 Attacks are played twice.
+Exhume	Skill	Rare	1 (0)	Put a card from your exhaust pile into your hand. Exhaust.	
+Feed	Attack	Rare	1	Deal 10 (12) damage. If Fatal, raise your Max HP by 3 (4). Exhaust.	
+Fiend Fire	Attack	Rare	2	Exhaust your hand. Deal 7 (10) damage for each card Exhausted. Exhaust.	
+Immolate	Attack	Rare	2	Deal 21 (28) damage to ALL enemies. Add a Burn into your discard pile.	
+Impervious	Skill	Rare	2	Gain 30 (40) Block. Exhaust.	
+Juggernaut	Power	Rare	2	Whenever you gain Block, deal 5 (7) damage to a random enemy.	
+Limit Break	Skill	Rare	1	Double your Strength. Exhaust.	Double your Strength.
+Offering	Skill	Rare	0	Lose 6 HP. Gain [R] [R]. Draw 3 (5) cards. Exhaust.	
+Reaper	Attack	Rare	2	Deal 4 (5) damage to ALL enemies. Heal HP equal to unblocked damage. Exhaust.	

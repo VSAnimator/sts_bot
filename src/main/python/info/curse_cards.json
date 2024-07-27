@@ -1,0 +1,86 @@
+{
+    "Clumsy": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. Ethereal."
+    },
+    "Decay": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. At the end of your turn, take 2 damage."
+    },
+    "Doubt": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. At the end of your turn, gain 1 Weak."
+    },
+    "Injury": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable."
+    },
+    "Normality": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. While in hand, you cannot play more than 3 cards this turn."
+    },
+    "Pain": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. While in hand, lose 1 HP whenever you play another card."
+    },
+    "Parasite": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. If transformed or removed from your deck, lose 3 Max HP."
+    },
+    "Regret": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. At the end of your turn, lose HP equal to the number of cards in your hand."
+    },
+    "Shame": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. At the end of your turn, gain 1 Frail."
+    },
+    "Writhe": {
+        "type": "Curse",
+        "rarity": "Curse",
+        "cost": "Unplayable",
+        "effect": "Unplayable. Innate."
+    },
+    "Ascender's Bane": {
+        "type": "Curse",
+        "rarity": "Special",
+        "cost": "Unplayable",
+        "effect": "Unplayable. Ethereal. Cannot be removed from your deck."
+    },
+    "Curse of the Bell": {
+        "type": "Curse",
+        "rarity": "Special",
+        "cost": "Unplayable",
+        "effect": "Unplayable. Cannot be removed from your deck."
+    },
+    "Necronomicurse": {
+        "type": "Curse",
+        "rarity": "Special",
+        "cost": "Unplayable",
+        "effect": "Unplayable. There is no escape from this Curse."
+    },
+    "Pride": {
+        "type": "Curse",
+        "rarity": "Special",
+        "cost": "1",
+        "effect": "Innate. At the end of your turn, put a copy of this card on top of your draw pile. Exhaust."
+    }
+}

@@ -1,0 +1,462 @@
+{
+    "Bash": {
+        "type": "Attack",
+        "rarity": "Basic",
+        "cost": "2",
+        "effect": "Deal 8 (10) damage. Apply 2 (3) Vulnerable."
+    },
+    "Defend": {
+        "type": "Skill",
+        "rarity": "Basic",
+        "cost": "1",
+        "effect": "Gain 5 (8) Block."
+    },
+    "Strike": {
+        "type": "Attack",
+        "rarity": "Basic",
+        "cost": "1",
+        "effect": "Deal 6 (9) damage."
+    },
+    "Anger": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "0",
+        "effect": "Deal 6 (8) damage. Add a copy of this card into your discard pile."
+    },
+    "Armaments": {
+        "type": "Skill",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Gain 5 Block. Upgrade a card in your hand for the rest of combat."
+    },
+    "Body Slam": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "upgraded_cost": "0",
+        "effect": "Deal damage equal to your Block."
+    },
+    "Clash": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "0",
+        "effect": "Can only be played if every card in your hand is an Attack. Deal 14 (18) damage."
+    },
+    "Cleave": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Deal 8 (11) damage to ALL enemies."
+    },
+    "Clothesline": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "2",
+        "effect": "Deal 12 (14) damage. Apply 2 (3) Weak."
+    },
+    "Flex": {
+        "type": "Skill",
+        "rarity": "Common",
+        "cost": "0",
+        "effect": "Gain 2 (4) Strength. At the end of this turn, lose 2 (4) Strength."
+    },
+    "Havoc": {
+        "type": "Skill",
+        "rarity": "Common",
+        "cost": "1",
+        "upgraded_cost": "0",
+        "effect": "Play the top card of your draw pile and Exhaust it."
+    },
+    "Headbutt": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Deal 9 (12) damage. Put a card from your discard pile on top of your draw pile."
+    },
+    "Heavy Blade": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "2",
+        "effect": "Deal 14 damage. Strength affects this card 3 (5) times."
+    },
+    "Iron Wave": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Gain 5 (7) Block. Deal 5 (7) damage."
+    },
+    "Perfected Strike": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "2",
+        "effect": "Deal 6 damage. Deals 2 (3) additional damage for ALL your cards containing \"Strike\"."
+    },
+    "Pommel Strike": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Deal 9 damage. Draw 1 card."
+    },
+    "Shrug It Off": {
+        "type": "Skill",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Gain 8 (11) Block. Draw 1 card."
+    },
+    "Sword Boomerang": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Deal 3 damage to a random enemy 3 (4) times."
+    },
+    "Thunderclap": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Deal 4 (7) damage and apply 1 Vulnerable to ALL enemies."
+    },
+    "True Grit": {
+        "type": "Skill",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Gain 7 Block. Exhaust 1 card at random."
+    },
+    "Twin Strike": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Deal 5 (7) damage twice."
+    },
+    "Warcry": {
+        "type": "Skill",
+        "rarity": "Common",
+        "cost": "0",
+        "effect": "Draw 1 card. Put a card from your hand onto the top of your draw pile. Exhaust."
+    },
+    "Wild Strike": {
+        "type": "Attack",
+        "rarity": "Common",
+        "cost": "1",
+        "effect": "Deal 12 (17) damage. Shuffle a Wound into your draw pile."
+    },
+    "Battle Trance": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Draw 3 (4) cards. You cannot draw additional cards this turn."
+    },
+    "Blood for Blood": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "4",
+        "upgraded_cost": "3",
+        "effect": "Costs 1 less [R] for each time you lose HP this combat. Deal 18 (22) damage."
+    },
+    "Bloodletting": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Lose 3 HP. Gain [R] [R]."
+    },
+    "Burning Pact": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Exhaust 1 card. Draw 2 (3) cards."
+    },
+    "Carnage": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "effect": "Ethereal. Deal 20 (28) damage."
+    },
+    "Combust": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "At the end of your turn, lose 1 HP and deal 5 (7) damage to ALL enemies."
+    },
+    "Dark Embrace": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "upgraded_cost": "1",
+        "effect": "Whenever a card is Exhausted, draw 1 card."
+    },
+    "Disarm": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Enemy loses 2 (3) Strength. Exhaust."
+    },
+    "Dropkick": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Deal 5 (8) damage. If the enemy has Vulnerable, gain [R] and draw 1 card."
+    },
+    "Dual Wield": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Choose an Attack or Power card. Add a copy of that card into your hand."
+    },
+    "Entrench": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "upgraded_cost": "1",
+        "effect": "Double your Block."
+    },
+    "Evolve": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Whenever you draw a Status card, draw 1 card."
+    },
+    "Feel No Pain": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Whenever a card is Exhausted, gain 3 (4) Block."
+    },
+    "Fire Breathing": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Whenever you draw a Status or Curse card, deal 6 (10) damage to ALL enemies."
+    },
+    "Flame Barrier": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "effect": "Gain 12 (16) Block. Whenever you are attacked this turn, deal 4 (6) damage back."
+    },
+    "Ghostly Armor": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Ethereal. Gain 10 (13) Block."
+    },
+    "Hemokinesis": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Lose 2 HP. Deal 15 (20) damage."
+    },
+    "Infernal Blade": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "upgraded_cost": "0",
+        "effect": "Add a random Attack into your hand. It costs 0 this turn. Exhaust."
+    },
+    "Inflame": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Gain 2 (3) Strength."
+    },
+    "Intimidate": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Apply 1 (2) Weak to ALL enemies. Exhaust."
+    },
+    "Metallicize": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "At the end of your turn, gain 3 (4) Block."
+    },
+    "Power Through": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Add 2 Wounds into your hand. Gain 15 (20) Block."
+    },
+    "Pummel": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Deal 2 damage 4 (5) times. Exhaust."
+    },
+    "Rage": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Whenever you play an Attack this turn, gain 3 (5) Block."
+    },
+    "Rampage": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Deal 8 damage. Increase this card's damage by 5 (8) this combat."
+    },
+    "Reckless Charge": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "0",
+        "effect": "Deal 7 (10) damage. Shuffle a Dazed into your draw pile."
+    },
+    "Rupture": {
+        "type": "Power",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Whenever you lose HP from a card, gain 1 (2) Strength."
+    },
+    "Searing Blow": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "effect": "Deal 12 (16) damage. Can be Upgraded any number of times."
+    },
+    "Second Wind": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Exhaust all non-Attack cards in your hand. Gain 5 (7) Block for each card Exhausted."
+    },
+    "Seeing Red": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "upgraded_cost": "0",
+        "effect": "Gain [R] [R]. Exhaust."
+    },
+    "Sentinel": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "Gain 5 Block. If this card is Exhausted, gain [R] [R]."
+    },
+    "Sever Soul": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "effect": "Exhaust all non-Attack cards in your hand. Deal 16 (22) damage."
+    },
+    "Shockwave": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "effect": "Apply 3 (5) Weak and Vulnerable to ALL enemies. Exhaust."
+    },
+    "Spot Weakness": {
+        "type": "Skill",
+        "rarity": "Uncommon",
+        "cost": "1",
+        "effect": "If the enemy intends to attack, gain 3 (4) Strength."
+    },
+    "Uppercut": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "2",
+        "effect": "Deal 13 damage. Apply 1 (2) Weak. Apply 1 (2) Vulnerable."
+    },
+    "Whirlwind": {
+        "type": "Attack",
+        "rarity": "Uncommon",
+        "cost": "X",
+        "effect": "Deal 5 (8) damage to ALL enemies X times."
+    },
+    "Barricade": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "3",
+        "upgraded_cost": "2",
+        "effect": "Block is not removed at the start of your turn."
+    },
+    "Berserk": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Gain 2 (1) Vulnerable. At the start of your turn, gain [R]."
+    },
+    "Bludgeon": {
+        "type": "Attack",
+        "rarity": "Rare",
+        "cost": "3",
+        "effect": "Deal 32 (42) damage."
+    },
+    "Brutality": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "At the start of your turn, lose 1 HP and draw 1 card."
+    },
+    "Corruption": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "3",
+        "upgraded_cost": "2",
+        "effect": "Skills cost 0. Whenever you play a Skill, Exhaust it."
+    },
+    "Demon Form": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "3",
+        "effect": "At the start of your turn, gain 2 (3) Strength."
+    },
+    "Double Tap": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "1",
+        "effect": "This turn, your next Attack is played twice."
+    },
+    "Exhume": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "1",
+        "upgraded_cost": "0",
+        "effect": "Put a card from your exhaust pile into your hand. Exhaust."
+    },
+    "Feed": {
+        "type": "Attack",
+        "rarity": "Rare",
+        "cost": "1",
+        "effect": "Deal 10 (12) damage. If Fatal, raise your Max HP by 3 (4). Exhaust."
+    },
+    "Fiend Fire": {
+        "type": "Attack",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Exhaust your hand. Deal 7 (10) damage for each card Exhausted. Exhaust."
+    },
+    "Immolate": {
+        "type": "Attack",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Deal 21 (28) damage to ALL enemies. Add a Burn into your discard pile."
+    },
+    "Impervious": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Gain 30 (40) Block. Exhaust."
+    },
+    "Juggernaut": {
+        "type": "Power",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Whenever you gain Block, deal 5 (7) damage to a random enemy."
+    },
+    "Limit Break": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "1",
+        "effect": "Double your Strength. Exhaust."
+    },
+    "Offering": {
+        "type": "Skill",
+        "rarity": "Rare",
+        "cost": "0",
+        "effect": "Lose 6 HP. Gain [R] [R]. Draw 3 (5) cards. Exhaust."
+    },
+    "Reaper": {
+        "type": "Attack",
+        "rarity": "Rare",
+        "cost": "2",
+        "effect": "Deal 4 (5) damage to ALL enemies. Heal HP equal to unblocked damage. Exhaust."
+    }
+}
