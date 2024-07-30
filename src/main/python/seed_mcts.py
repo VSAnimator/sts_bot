@@ -27,7 +27,7 @@ def create_seed():
     return ''.join(np.random.choice(list(char_string)) for _ in range(len("5F68Z78NR2FSF")))
 '''
 
-game_seed = "28BHFTJXDYBZG"
+game_seed = "18BHFTJXDYBZG"
 
 # For each run, create a random global_seed and take actions
 global_seed = None
@@ -179,6 +179,7 @@ def intelligent_random_choice(parsed_state):
         response = "choose 0"
         gpt = False
         next_choice_card = True
+    #response = input("Enter your response: ")
     return response
 
 def send_message_func(sock, received_message, log_file, raw_log_file):
