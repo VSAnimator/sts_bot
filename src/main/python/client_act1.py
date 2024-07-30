@@ -160,6 +160,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         # First filter out potions from the available commands if no potion slots
         choice_offset = 0
         using_sim_states = True
+        using_neg_states = True
         if 'potion' in parsed_state['game_state']['choice_list']: 
             # Check how many "Potion Slot" elems are in the game state potions
             potion_slots = [potion for potion in parsed_state['game_state']['potions'] if potion == 'Potion Slot']
@@ -204,16 +205,25 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         # If we are currently choosing between cards, route it now to the data-driven approach
         elif using_sim_states and next_choice_card:
             # Now we are in the card choice screen
-            entries = card_choice_query(parsed_state) # gpt variable says whether to default to GPT when not enough data.
+            entries = card_choice_query(parsed_state, victory = 1) # gpt variable says whether to default to GPT when not enough data.
+            if using_neg_states:
+                neg_entries = card_choice_query(parsed_state, victory = 0)
+                entries = [entries, neg_entries]
             next_choice_card = False
         if using_sim_states and parsed_state['game_state']['screen_type'] == "REST" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make campfire decisions
-            entries = campfire_query(parsed_state)
+            entries = campfire_query(parsed_state, victory = 1)
+            if using_neg_states:
+                neg_entries = campfire_query(parsed_state, victory = 0)
+                entries = [entries, neg_entries]
             #print("Response", response, gpt)
             #input("Press Enter to continue...")
         if using_sim_states and parsed_state['game_state']['screen_type'] == "EVENT" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make event decisions
-            entries = event_query(parsed_state)
+            entries = event_query(parsed_state, victory = 1)
+            if using_neg_states:
+                neg_entries = event_query(parsed_state, victory = 0)
+                entries = [entries, neg_entries]
             #print("Response", response, gpt)
             #input("Press Enter to continue...")
         #if parsed_state['game_state']['screen_type'] == "MAP" and len(parsed_state['game_state']['choice_list']) > 1:

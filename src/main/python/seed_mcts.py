@@ -124,10 +124,12 @@ last_time = 0
 total_autoplay_time = 0
 last_message = "start ironclad 10 " + game_seed
 
-def intelligent_random_choice(parsed_state):
-    global last_message
-    last_response = last_message
+def intelligent_random_choice(parsed_state, last_response):
     response = None
+    if "end" in parsed_state['available_commands'] and "autoplay" not in parsed_state['available_commands']:
+        # autoplay needs to load
+        time.sleep(0.5)
+        return "autoplay"
     if "autoplay" in parsed_state['available_commands']:
         response = "autoplay"
         return response
@@ -229,7 +231,7 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         # Start game
         chosen_option = pick_start_command() #"start ironclad 10 " + game_seed
     if chosen_option is None:
-        chosen_option = intelligent_random_choice(parsed_state) # Do the default rules for simple decisions
+        chosen_option = intelligent_random_choice(parsed_state, last_message) # Do the default rules for simple decisions
     if chosen_option is None:
         # Randomly choose an option
         if generator is not None:

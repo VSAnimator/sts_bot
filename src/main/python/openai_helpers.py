@@ -338,9 +338,9 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 # Reason across the similar states to make a decision
                 if len(similar_states) == 2:
                     # We have wins and losses
-                    prompt = "To help your decision, here are 5 potentially-similar states from a database of winning human playthroughs, and 5 from a database of losing human playthroughs. The 'actions taken' field annotates the choices the human made at a particular state. \n Winning: " + str(similar_states[0][:5]) + " \nLosing: " + str(similar_states[1][:5])
+                    prompt = "To help your decision, here are up to 5 potentially-similar states from a database of winning human playthroughs, and up to 5 from a database of losing human playthroughs. The 'actions taken' field annotates the choices the human made at a particular state. \n Winning: " + str(similar_states[0][:5]) + " \nLosing: " + str(similar_states[1][:5])
                 else:
-                    prompt = "To help your decision, here are 5 potentially-similar states from a database of winning human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
+                    prompt = "To help your decision, here are up to 5 potentially-similar states from a database of winning human playthroughs, where the 'actions taken' field annotates the choices the human made at a particular state: " + str(similar_states[:5])
                 prompt += "\n" + "1. Analyze each state, particularly the deck and relics, and compare them to the current state. Provide two sentences of analysis per state. 2. What can be learned from the decisions humans made in these states? Place particular emphasis on states that are very similar to the current state."
                 human_analysis_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
                 #current_messages.append({"role": "user", "content": prompt})

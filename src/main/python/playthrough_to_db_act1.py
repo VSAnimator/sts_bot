@@ -14,7 +14,8 @@ state_table = db['states']
 # Insert all runs in "runs" folder
 # Get list of filenames from "runs/"
 #filenames = sorted(os.listdir("runs/"))
-filenames = sorted(os.listdir("act1/runs/"))
+run_base = "act1/runs/"
+filenames = sorted(os.listdir(run_base))
 valid_count = 0
 win_count = 0
 floor_reached = []
@@ -23,7 +24,7 @@ for elem in filenames:
         continue
     print("Processing: ", elem)
     filename = elem.split(".txt")[0]
-    with open("act1/runs/" + filename + ".txt", "r") as file:
+    with open(run_base + filename + ".txt", "r") as file:
         trajectory_file = file.read()
     # Split into a list line by line
     trajectory = trajectory_file.split("\n")
@@ -103,6 +104,8 @@ for elem in filenames:
         state_dict['timestamp'] = filename
         if 'event_name' in state_dict['game_state']['screen_state']:
             state_dict['event_name'] = state_dict['game_state']['screen_state']['event_name']
+        if 'next_node_info' in state_dict['game_state']['screen_state']:
+            state_dict['next_node_info'] = str(state_dict['game_state']['screen_state']['next_node_info'])
         # Flatten all nested dicts by collapsing keys
         flattened_state_dict = {f"{key}_{nested_key}": nested_value for key, value in state_dict.items() if isinstance(value, dict) for nested_key, nested_value in value.items()}
         #print("To insert", state_dict)
