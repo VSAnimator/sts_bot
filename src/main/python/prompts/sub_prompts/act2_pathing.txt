@@ -1,5 +1,3 @@
-Pathing decisions:
-- Aim to fight 2 or 3 elites
-- Prefer fighting elites later, especially after a camp fire
-- Do not fight an elite if your HP is low or if your deck doesn't have enough damage
-- The first 2 combats are from the "easy pool".  Further combats are from the "hard pool".  Prioritize easy pool fights, but delay hard pool fights until you have more damage.
+Pathing advice: 
+
+Priority one is making sure we fight enough Elites. We need to get as strong as possible and that’s where most of the challenge and reward for that act is concentrated. We usually don’t want to leave the act without fighting at least two of them, and three is usually better, if we can manage it. Ideally, we take a path that gives us options, a fork that allows us to take 2-3 elites if we feel able, but also lets us wuss out into something easier but less rewarding if things aren’t going well.We do need to make sure we’re properly prepared to fight them by adding cards (specifically damage cards) or potions first. If you have a decent chunk of gold (250+), pathing to a shop should be a high priority. Fighting elites is good when the deck is well-prepared for them, but it is ok to path away from elites if your deck risks dying to a specific elite combat. In general event nodes can be quite strong in act 2 and act 3. However, if you are in act 2, and able to easily defeat hallways, and your deck has no desire for bites, apparitions, ritual dagger, and no golden idol, then hallways might be better than event nodes. 

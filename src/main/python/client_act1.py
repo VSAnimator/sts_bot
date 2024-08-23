@@ -10,8 +10,10 @@ from launch_game import start_game
 import os
 import signal
 import select
-from key_queries import similar_card_choice, campfire_choice, event_choice, pathing_choice, boss_relic_choice
+from act1_queries import event_query, card_choice_query, campfire_query, smithing_query, map_query
 import string
+import random
+from datetime import datetime, timedelta
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
@@ -26,12 +28,32 @@ def create_seed():
     char_string = char_string.replace('O', '')
     return ''.join(np.random.choice(list(char_string)) for _ in range(len("5F68Z78NR2FSF")))
 
+def load_command():
+    # Find one of the states from between 12:02 and 6:29 AM on the 28th
+    save_dir = "/Users/sarukkai/Library/Application Support/Steam/steamapps/common/SlayTheSpire/SlayTheSpire.app/Contents/Resources/startstates"
+    # Define the time window
+    start_time = datetime.strptime("2024-07-28 00:02", "%Y-%m-%d %H:%M")
+    end_time = datetime.strptime("2024-07-28 06:29", "%Y-%m-%d %H:%M")
+    # List subfolders in the directory
+    subfolders = [f.path for f in os.scandir(save_dir) if f.is_dir()]
+    # Filter subfolders by modification time
+    filtered_subfolders = []
+    for folder in subfolders:
+        mod_time = datetime.fromtimestamp(os.path.getctime(folder))
+        if start_time <= mod_time <= end_time:
+            filtered_subfolders.append(folder)
+    # Sample one subfolder
+    if filtered_subfolders:
+        sampled_subfolder = random.choice(filtered_subfolders)
+    load_command = "load startstates/" + sampled_subfolder.split("startstates/")[1] + "/" + str(0).zfill(2) + "/saves/IRONCLAD.autosave"
+    return load_command
+
 new_run = False
 def receive_messages(sock, send_message_func):
     global exception_count, new_run
     while True:
-        log_filename = f"runs/{time.time()}.txt"
-        raw_log_filename = f"runs_raw/{time.time()}.txt"
+        log_filename = f"act1/runs/{time.time()}.txt"
+        raw_log_filename = f"act1/runs_raw/{time.time()}.txt"
 
         with open(log_filename, "w") as log_file, open(raw_log_filename, "w") as raw_log_file:
             last_activity_time = time.time()
@@ -108,9 +130,9 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
     # Write the parsed state to log file, and the raw message to raw log file
     log_file.write(str(parsed_state) + "\n")
     raw_log_file.write(received_message + "\n")
-    if "start" in parsed_state['available_commands']:
+    if "start" in parsed_state['available_commands'] or parsed_state['game_state']['act'] > 1:
         new_run = True
-        response = "start ironclad 10 " + create_seed()
+        response = load_command() #"start ironclad 10 " + create_seed()
         encoded_message = response.encode('utf-8')
         sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
         sock.sendall(encoded_message)
@@ -137,7 +159,8 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         entries = None # Hold similar entries if we run sql search on events
         # First filter out potions from the available commands if no potion slots
         choice_offset = 0
-        using_sim_states = False
+        using_sim_states = True
+        using_neg_states = True
         if 'potion' in parsed_state['game_state']['choice_list']: 
             # Check how many "Potion Slot" elems are in the game state potions
             potion_slots = [potion for potion in parsed_state['game_state']['potions'] if potion == 'Potion Slot']
@@ -182,26 +205,30 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
         # If we are currently choosing between cards, route it now to the data-driven approach
         elif using_sim_states and next_choice_card:
             # Now we are in the card choice screen
-            _, _, entries = similar_card_choice(parsed_state['game_state'], max_action) # gpt variable says whether to default to GPT when not enough data.
+            entries = card_choice_query(parsed_state, victory = 1) # gpt variable says whether to default to GPT when not enough data.
+            if using_neg_states:
+                neg_entries = card_choice_query(parsed_state, victory = 0)
+                entries = [entries, neg_entries]
             next_choice_card = False
         if using_sim_states and parsed_state['game_state']['screen_type'] == "REST" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make campfire decisions
-            _, _, entries = campfire_choice(parsed_state['game_state'], max_action)
+            entries = campfire_query(parsed_state, victory = 1)
+            if using_neg_states:
+                neg_entries = campfire_query(parsed_state, victory = 0)
+                entries = [entries, neg_entries]
             #print("Response", response, gpt)
             #input("Press Enter to continue...")
         if using_sim_states and parsed_state['game_state']['screen_type'] == "EVENT" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make event decisions
-            _, _, entries = event_choice(parsed_state['game_state'], max_action)
+            entries = event_query(parsed_state, victory = 1)
+            if using_neg_states:
+                neg_entries = event_query(parsed_state, victory = 0)
+                entries = [entries, neg_entries]
             #print("Response", response, gpt)
             #input("Press Enter to continue...")
-        if using_sim_states and parsed_state['game_state']['screen_type'] == "BOSS_REWARD" and len(parsed_state['game_state']['choice_list']) > 1:
-            # Let's probabilistically make boss reward decisions
-            _, _, entries = boss_relic_choice(parsed_state['game_state'], max_action)
-            #print("Response", response, gpt)
-            #input("Press Enter to continue...")
-        if parsed_state['game_state']['screen_type'] == "MAP" and len(parsed_state['game_state']['choice_list']) > 1:
+        #if parsed_state['game_state']['screen_type'] == "MAP" and len(parsed_state['game_state']['choice_list']) > 1:
             # Let's probabilistically make pathing decisions
-            _, _, entries = pathing_choice(parsed_state['game_state'], max_action)
+        #    entries = map_query(parsed_state)
             #print("Response", response, gpt)
             #response = input("Give command...")
             #gpt = False
