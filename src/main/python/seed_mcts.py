@@ -27,30 +27,46 @@ def create_seed():
     return ''.join(np.random.choice(list(char_string)) for _ in range(len("5F68Z78NR2FSF")))
 '''
 
-game_seed = "28BHFTJXDYBZG"
+game_seed = "18AHFTJXDYBZG"
 
 # For each run, create a random global_seed and take actions
 global_seed = None
 
-base_save_path = "/Users/sarukkai/Library/Application Support/Steam/steamapps/common/SlayTheSpire/SlayTheSpire.app/Contents/Resources/startstates/"
+base_save_path = "/home/vsarukkai/.steam/steam/steamapps/common/SlayTheSpire/startstates/"
 
 generator = None
 
 def pick_start_command():
-    # First visit the base save path and see how many folders exist that start with the game_seed
-    valid_folders = [folder for folder in os.listdir(base_save_path) if folder.startswith(game_seed)]
+    global game_seed
+    base_seed = game_seed[2:]
+    i = 10
+    while True: 
+        game_seed = str(i).zfill(2) + base_seed
+        # First visit the base save path and see how many folders exist that start with the game_seed
+        valid_folders = [folder for folder in os.listdir(base_save_path) if folder.startswith(game_seed)]
+        if len(valid_folders) < 50:
+            break
+        i += 1
     # If there are less than 20, we start a game from scratch
     if len(valid_folders) < 20:
-        return "start ironclad 10 " + game_seed
+        return "start ironclad 20 " + game_seed
     # If not, we load a game from one of the existing seeds
     else:
-        # Pick a random folder
-        folder = np.random.choice(valid_folders)
-        # Open the folder and check the valid floors within
-        folder_path = base_save_path + folder
-        valid_floors = [int(f) for f in os.listdir(folder_path)]
-        # Sample uniformly from the valid floors
-        floor = np.random.choice(valid_floors)
+        attempts = 0
+        while True:
+            # Pick a random folder
+            folder = np.random.choice(valid_folders)
+            # Open the folder and check the valid floors within
+            folder_path = base_save_path + folder
+            valid_floors = [int(f) for f in os.listdir(folder_path)]
+            if 0 in valid_floors:
+                valid_floors.remove(0)
+            # Sample uniformly from the valid floors
+            floor = np.random.choice(valid_floors)
+            # Check that the file actually exists
+            if os.path.isfile(base_save_path + folder + "/" + str(floor).zfill(2) + "/saves/IRONCLAD.autosave") or attempts > 10:
+                break
+            attempts += 1
         # Load the floor, format like "load startstates/4ZNJ22MUNT7DX/06/saves/IRONCLAD.autosave"
         # Make sure to format the floor as a string with 2 digits
         return "load startstates/" + folder + "/" + str(floor).zfill(2) + "/saves/IRONCLAD.autosave"
@@ -214,7 +230,10 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
             shutil.copytree(save_folder_name, new_save_folder_name)
             # Copy the log file as well
             log_file_name = log_file.name
-            new_log_file_name = log_file_name.replace("current", str(global_seed))
+            # Make sure seed is correct in this
+            if not os.path.exists("mcts_runs/" + game_seed + "/"):
+                os.makedirs("mcts_runs/" + game_seed + "/", exist_ok=True)
+            new_log_file_name = "mcts_runs/" + game_seed + "/" + str(global_seed) + ".txt"
             shutil.copy(log_file_name, new_log_file_name)
             # Now create the new seed
             global_seed = np.random.randint(0, 1000000)
@@ -265,7 +284,7 @@ def main():
     process_1, process_2 = start_game()
     
     # Wait 20 seconds for the game to start
-    time.sleep(40)
+    time.sleep(20)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
