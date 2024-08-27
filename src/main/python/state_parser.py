@@ -53,7 +53,7 @@ def parse_game_state(game_state_json):
             if elem['id'] == "Potion Slot":
                 potions_full = False
     # Check for choices to remove
-    if potions_full:
+    if potions_full or 'sozu' in game_state['game_state']['relics'] or 'Sozu' in game_state['game_state']['relics']:
         to_remove = []
         if 'choice_list' in game_state['game_state']:
             for elem in game_state['game_state']['choice_list']:

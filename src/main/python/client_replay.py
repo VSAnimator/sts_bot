@@ -12,7 +12,7 @@ import select
 
 HOST_IP = "127.0.0.1"
 PORT = 8080
-TIMEOUT_THRESHOLD = 15 #* 100 # 5 minutes
+TIMEOUT_THRESHOLD = 15000 #* 100 # 5 minutes
 
 exception_count = 0
 
@@ -86,7 +86,7 @@ total_autoplay_time = 0
 last_message = "start ironclad 10"
 
 # Open file with commands
-with open("command_log.txt", "r") as f:
+with open("command_logs/1722058666.txt", "r") as f:
     commands = f.read().split("\n")
 
 def send_message_func(sock, received_message, log_file, raw_log_file):

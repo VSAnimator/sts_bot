@@ -34,6 +34,7 @@ def example_condition_check():
 
 def start_game():
     # Commands and working directories
+    '''
     command1 = [
         "sudo",
         "./jre/bin/java",
@@ -44,11 +45,37 @@ def start_game():
         "/Users/sarukkai/Library/Application Support/Steam/steamapps/common/SlayTheSpire/SlayTheSpire.app/Contents/Resources/mods/ModTheSpireSigned.jar",
         "--skip-launcher"
     ]
+    '''
+    command1 = [
+        "sudo",
+        "./jre/bin/java",
+        "-Xms1024m",
+        "-Xmx2048m",
+        "-jar",
+        "-DisServer=true",
+        "-DisPlaidMode=true",
+        "/Users/sarukkai/Library/Application Support/Steam/steamapps/common/SlayTheSpire/SlayTheSpire.app/Contents/Resources/mods/ModTheSpireSigned.jar",
+        "--skip-intro",
+        "--skip-launcher"
+    ]
     working_directory1 = "/Users/sarukkai/Library/Application Support/Steam/steamapps/common/SlayTheSpire/SlayTheSpire.app/Contents/Resources"
 
+    '''
     command2 = [
         "./jre/bin/java",
         "-jar",
+        "/Users/sarukkai/Library/Application Support/Steam/steamapps/workshop/content/646570/1605060445/ModTheSpireSigned2.jar",
+        "--skip-intro",
+        "--skip-launcher"
+    ]
+    '''
+    command2 = [
+        "./jre/bin/java",
+        "-Xms1024m",
+        "-Xmx2048m",
+        "-jar",
+        "-DconnectOnStartup=true",
+        "-DisPlaidMode=true",
         "/Users/sarukkai/Library/Application Support/Steam/steamapps/workshop/content/646570/1605060445/ModTheSpireSigned2.jar",
         "--skip-intro",
         "--skip-launcher"

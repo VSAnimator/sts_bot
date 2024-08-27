@@ -3,12 +3,14 @@ import json
 import string
 
 # Battle file name
-battle_file = "/Users/sarukkai/Documents/rl/sts/CommunicationModExtension/src/main/python/runs_raw/1721114507.7982662.txt"
+battle_file = "/Users/sarukkai/Documents/rl/sts/CommunicationModExtension/src/main/python/runs_raw/1722058666.0577111.txt" #1722138966.682849.txt" #1722139857.759441.txt"
 
 seed = None
 
+file_end = battle_file.split("/")[-1].split(".")[0]
+
 # Output file for command log
-output_file = "command_log.txt"
+output_file = "command_logs/" + file_end + ".txt"
 
 # Read the battle file
 with open(battle_file, "r") as f:
@@ -56,7 +58,10 @@ line_count = 0
 # Open the output file
 with open(output_file, "w") as f:
     # For every line, if "choose " is present, print the line
+    floor = None
+    last_command = None
     for line in battle_data:
+        #print(line)
         if "seed\":" in line and seed is None:
             seed = convert_seed_to_string(int(line.split("seed\":")[1].split(",")[0]))
             # Also get ascension
@@ -64,15 +69,18 @@ with open(output_file, "w") as f:
             f.write("start ironclad " + ascension + " " + seed + "\n")
             line_count += 1
             #exit()
-        if "Response: " in line and "autoplay" not in line:
+        if "Response: " in line: #and "autoplay" not in line:
             #if "confirm" in line:
                 #print("confirm involved ", line)
                 #line = line.replace("confirm", "proceed")
                 #print(line)
             f.write(line.split("Response: ")[1].strip() + "\n")
             line_count += 1
-        elif "battle_log" in line:
-            #print(line)
+        
+        continue
+
+        if "battle_log" in line or (last_command == "autoplay" and "autoplay" not in line):
+            #print("Hello")
             state = json.loads("{\"" + line)
             floor = state["game_state"]["floor"]
             # Pad floor out to two digits "01", "02", "03", etc.
@@ -116,6 +124,10 @@ with open(output_file, "w") as f:
                             else:
                                 f.write("proceed \n")
                         line_count += 1
+        if "autoplay" in line:
+            last_command = "autoplay"
+        else:
+            last_command = None
 
 '''
 # For every line, if "choose " is present, print the line

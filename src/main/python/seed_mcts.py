@@ -144,7 +144,7 @@ def intelligent_random_choice(parsed_state, last_response):
     response = None
     if "end" in parsed_state['available_commands'] and "autoplay" not in parsed_state['available_commands']:
         # autoplay needs to load
-        time.sleep(0.5)
+        time.sleep(0.1)
         return "autoplay"
     if "autoplay" in parsed_state['available_commands']:
         response = "autoplay"
@@ -186,7 +186,11 @@ def intelligent_random_choice(parsed_state, last_response):
         response = "choose 0"
         gpt = False
     # When the choice list has gold, take the gold
-    elif parsed_state['game_state']['choice_list'][0] == 'gold' or parsed_state['game_state']['choice_list'][0] == 'stolen gold':
+    elif parsed_state['game_state']['choice_list'][0] == 'gold' or parsed_state['game_state']['choice_list'][0] == 'stolen_gold':
+        response = "choose 0"
+        gpt = False
+    # When the choice list has gold, take the gold
+    elif parsed_state['game_state']['choice_list'][0] == 'emerald_key' or parsed_state['game_state']['choice_list'][0] == 'sapphire_key':
         response = "choose 0"
         gpt = False
     # If the choice list has a card or shop, go in...but if the last command was to skip, then make sure to now proceed.

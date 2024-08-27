@@ -35,3 +35,8 @@ CommunicationModExtension.iml
 
 # python
 *.pyc
+
+*.db*
+*.txt
+*.DS_Store
+*.json

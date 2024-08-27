@@ -130,6 +130,7 @@ for i in range(20):
 
     # Now see how we'd modify the system prompt
 
+    '''
     x = update_win_prediction_prompt(system_prompt, reference_state, similar_states, str(llm_pred), "The run actually resulted in a " + ("win" if gt_win == 1 else "loss"), run_id)
 
     print("Updated prompt: ", x)
@@ -143,6 +144,7 @@ for i in range(20):
             system_prompt = x['new_prompt']
     except Exception as e:
         print("Error: ", e)
+    '''
 
 print("Losses: ", losses)
 print("Mean loss: ", np.mean(losses))
