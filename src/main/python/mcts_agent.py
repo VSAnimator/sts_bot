@@ -52,9 +52,9 @@ def decision_policy(parsed_state, mcts_state, mcts_file):
                 decision_options[leaf_state['path_commands']] = [leaf_state]
             else:
                 decision_options[leaf_state['path_commands']].append(leaf_state)
-            del leaf_state['path_commands']
-    #return list(mcts_state.leaf_states.keys())[0]
-    return value_decision(parsed_state, decision_options, game_seed)
+            #del leaf_state['path_commands']
+    return list(mcts_state.leaf_states.keys())[0]
+    #return value_decision(parsed_state, decision_options, game_seed)
 
 def get_all_options(parsed_state):
     all_options = copy.deepcopy(parsed_state['available_commands'])
@@ -122,6 +122,8 @@ def next_mcts_command(sock, received_message, log_file, mcts_file):
     global mcts_state, mcts_depth, mcts_samples, lookahead_policy, game_seed, last_response, last_lookahead_response, last_mcts_floor
     parsed_state, _ = parse_game_state('{"' + received_message)
     if not mcts_state.in_mcts:
+        print("Path commands", mcts_state.path_commands)
+        #input("Please look")
         next_path_command = None
         # By default we run intelligent random choice
         try:
@@ -146,6 +148,8 @@ def next_mcts_command(sock, received_message, log_file, mcts_file):
                 all_options = get_all_options(parsed_state)
                 print("All options", all_options)
                 print("Next_path_command", next_path_command)
+                print("Path commands", mcts_state.path_commands)
+                #input("Need to look here")
                 if next_path_command is not None and next_path_command in all_options:
                     next_command = next_path_command
                 else:
@@ -183,14 +187,21 @@ def next_mcts_command(sock, received_message, log_file, mcts_file):
                 #input("Time for decision")
                 next_command = decision_policy(parsed_state, mcts_state, mcts_file)
                 #input("Decisiont made")
+                print("Decision made:", next_command)
+                print("Leaf states", list(mcts_state.leaf_states.keys()))
+                #input("Key issue")
+                # Make sure the path taken by the chosen node is available
+                if next_command in mcts_state.leaf_states:
+                    print(mcts_state.leaf_states[next_command])
+                    print(mcts_state.leaf_states[next_command][0])
+                    mcts_state.path_commands = mcts_state.leaf_states[next_command][0]['path_commands']
+                    # Remove the first command
+                    mcts_state.path_commands = mcts_state.path_commands[len(next_command) + 1:]
                 # Note that mcts is over now for the step
                 mcts_state.in_mcts = False
                 mcts_state.leaf_states = {}
                 mcts_state.samples_taken = 0
                 mcts_state.curr_command = ""
-                # Make sure the path taken by the chosen node is available
-                if next_command in mcts_state.leaf_states:
-                    mcts_state.path_commands = mcts_state.leaf_states[next_command][0]['path_commands']
 
     # Now replace the number with the text for the command
     '''
@@ -219,7 +230,7 @@ def create_seed():
     char_string = string.digits + string.ascii_uppercase
     # Remove 'O' from the char_string
     char_string = char_string.replace('O', '')
-    return '12BHFTJXDYBZG'
+    return '13BHFTJXDYBZG'
     #return ''.join(np.random.choice(list(char_string)) for _ in range(len("5F68Z78NR2FSF")))
 
 def receive_messages(sock, send_message_func):
