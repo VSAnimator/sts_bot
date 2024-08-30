@@ -14,14 +14,22 @@
         .highlight-blue { background-color: lightblue; }
         .highlight-red { background-color: lightcoral; }
         .highlight-green { background-color: lightgreen; }
+        .key-info-container {
+            display: flex;
+            gap: 20px; /* Space between columns */
+        }
+
+        .column {
+            flex: 1; /* Each column takes equal space */
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Slay the Spire State Viewer</h1>
         <div class="section">
-            <label for="timestampInput">Enter timestamp:</label>
-            <input type="text" id="timestampInput">
+            <label for="timestampInput">Select seed:</label>
+            <select id="timestampInput"></select>
             <button onclick="loadStates()">Load Trajectory</button>
         </div>
 
@@ -29,37 +37,27 @@
             <label for="stepInput">Enter step id:</label>
             <input type="number" id="stepInput" value="0" min="0">
             <button onclick="displayState()">Display State</button>
-        </div>
-
-        <div class="section">
-            <h2>Search Criteria</h2>
-            <label for="searchKey">Select Key:</label>
-            <select id="searchKey"></select>
-            <label for="comparison">Comparison:</label>
-            <select id="comparison">
-                <option value="=">=</option>
-                <option value=">">></option>
-                <option value="<"><</option>
-                <option value="contains">contains</option>
-            </select>
-            <label for="searchValue">Value:</label>
-            <input type="text" id="searchValue" placeholder="e.g., 75 or Inflame">
-            <button onclick="searchStates()">Search States</button>
+            <button onclick="previousStep()">Previous</button>
+            <button onclick="nextStep()">Next</button>
         </div>
 
         <div class="section">
             <h2>Key Information</h2>
-            <p><strong>Class:</strong> <span id="class">N/A</span></p>
-            <p><strong>Ascension Level:</strong> <span id="ascension_level">N/A</span></p>
-            <p><strong>Current HP:</strong> <span id="current_hp">N/A</span> / <span id="max_hp">N/A</span></p>
-            <p><strong>Gold:</strong> <span id="gold">N/A</span></p>
-            <p><strong>Floor:</strong> <span id="floor">N/A</span></p>
-            <p><strong>Act Boss:</strong> <span id="act_boss">N/A</span></p>
-        </div>
-
-        <div class="section">
-            <h2>Available Commands</h2>
-            <div class="list" id="available_commands"></div>
+            <div class="key-info-container">
+                <div class="column">
+                    <p><strong>Class:</strong> <span id="class">N/A</span></p>
+                    <p><strong>Ascension Level:</strong> <span id="ascension_level">N/A</span></p>
+                    <p><strong>Current HP:</strong> <span id="current_hp">N/A</span> / <span id="max_hp">N/A</span></p>
+                    <p><strong>Gold:</strong> <span id="gold">N/A</span></p>
+                    <p><strong>Floor:</strong> <span id="floor">N/A</span></p>
+                    <p><strong>Act Boss:</strong> <span id="act_boss">N/A</span></p>
+                </div>
+                <div class="column">
+                    <p><strong>Event ID:</strong> <span id="event_id">N/A</span></p>
+                    <p><strong>Screen Type:</strong> <span id="screen_type">N/A</span></p>
+                    <div id="next_node_info"></div>
+                </div>
+            </div>
         </div>
 
         <div class="section">
@@ -85,18 +83,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            fetch('/get_keys')
+            // Fetch available filenames for timestamps and populate the dropdown
+            fetch('/get_filenames')
                 .then(response => response.json())
-                .then(keys => {
-                    const searchKeyDropdown = document.getElementById('searchKey');
-                    keys.forEach(key => {
+                .then(filenames => {
+                    const timestampDropdown = document.getElementById('timestampInput');
+                    filenames.forEach(filename => {
                         const option = document.createElement('option');
-                        option.value = key;
-                        option.textContent = key;
-                        searchKeyDropdown.appendChild(option);
+                        option.value = filename;
+                        option.textContent = filename;
+                        timestampDropdown.appendChild(option);
                     });
                 })
-                .catch(error => console.error('Error fetching keys:', error));
+                .catch(error => console.error('Error fetching filenames:', error));
         });
 
         let allStates = [];
@@ -126,35 +125,34 @@
             }
         }
 
-        function searchStates() {
-            const key = document.getElementById('searchKey').value;
-            const comparison = document.getElementById('comparison').value;
-            const value = document.getElementById('searchValue').value;
-            let query = `key=${key}&comparison=${comparison}&value=${encodeURIComponent(value)}`;
+        // Utility function to safely parse JSON-like strings
+        function safeParse(input) {
+            try {
+                // Escape single quotes and double quotes
+                const jsonString = input
+                    .replace(/'/g, '\''); // Escape single quotes
 
-            fetch(`/search_states?${query}`)
-                .then(response => response.json())
-                .then(states => {
-                    if (states.error) {
-                        alert(states.error);
-                    } else {
-                        allStates = states;
-                        alert("Search complete. Enter a step id to display a specific state.");
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                console.log(jsonString);
+
+                // Convert the cleaned-up string to JSON
+                return JSON.parse(jsonString);
+            } catch (e) {
+                console.error("Error parsing JSON-like string:", e);
+                return []; // Return empty array on failure
+            }
         }
 
         function updateStateView(state) {
-            console.log(state)
+            console.log(state);
+            const labeledChoice = state.label ? state.label.toLowerCase() : null;
+
             const botAction = state.bot_response ? state.bot_response.split(' ') : null;
             const botCommand = botAction ? botAction[0] : null;
             const botChoice = botAction ? botAction.slice(1).join(' ').toLowerCase() : null;
-            // const analysis = state.analysis ? JSON.parse(state.analysis) : null;
             const bestAction = state.best_action ? state.best_action.split(' ') : null;
             const bestCommand = bestAction ? bestAction[0] : null;
             var bestChoice = bestAction ? bestAction.slice(1).join(' ') : null;
-            bestChoice = bestCommand === "choose" ? bestChoice.toLowerCase() : (state.best_action ?state.best_action.toLowerCase() : null);
+            bestChoice = bestCommand === "choose" ? bestChoice.toLowerCase() : (state.best_action ? state.best_action.toLowerCase() : null);
             const rating = parseInt(state.rating ? state.rating : 0);
 
             // Update key information
@@ -165,8 +163,22 @@
             document.getElementById('gold').textContent = state.game_state_gold;
             document.getElementById('floor').textContent = state.game_state_floor;
             document.getElementById('act_boss').textContent = state.game_state_act_boss;
+            document.getElementById('event_id').textContent = state.event_id || 'N/A';
+            document.getElementById('screen_type').textContent = state.game_state_screen_type || 'N/A';
+
+            // Update next node information
+            const nextNodeInfoContainer = document.getElementById('next_node_info');
+            nextNodeInfoContainer.innerHTML = ''; // Clear previous entries
+            Object.keys(state).forEach(key => {
+                if ((key.startsWith('next_node_info_x=') || key.startsWith('next_nodes')) && state[key] !== null) {
+                    const p = document.createElement('p');
+                    p.innerHTML = `<strong>${key}:</strong> ${state[key]}`;
+                    nextNodeInfoContainer.appendChild(p);
+                }
+            });
 
             // Update available commands
+            /*
             const availableCommands = document.getElementById('available_commands');
             availableCommands.innerHTML = '';
             try {
@@ -192,28 +204,29 @@
             } catch (e) {
                 console.error("Error parsing available commands:", e);
             }
+            */
 
             // Update choice list
             const choiceList = document.getElementById('choice_list');
             choiceList.innerHTML = '';
             try {
-                const choices = JSON.parse(state.game_state_choice_list.replace(/'/g, '"'));
+                const choices = safeParse(state.game_state_choice_list);
                 choices.forEach(choice => {
                     const div = document.createElement('div');
                     div.className = 'list-item';
-                    if (choice.toLowerCase() === botChoice) {
-                        if (rating === -1) {
-                            div.classList.add('highlight-red');
-                        } else if (rating === 0) {
-                            div.classList.add('highlight-blue');
-                        } else if (rating === 1) {
-                            div.classList.add('highlight-green');
-                        }
-                    }
-                    if (choice.toLowerCase() === bestChoice && choice.toLowerCase() !== botChoice) {
+                    div.textContent = choice;
+
+                    // Highlight the labeled choice
+                    if (choice.toLowerCase() === labeledChoice) {
                         div.classList.add('highlight-green');
                     }
-                    div.textContent = choice;
+
+                    // Add click event listener to label the choice and highlight it
+                    div.onclick = () => {
+                        labelChoice(state.id, choice);
+                        highlightSelectedChoice(div);
+                    };
+
                     choiceList.appendChild(div);
                 });
             } catch (e) {
@@ -224,7 +237,7 @@
             const deck = document.getElementById('deck');
             deck.innerHTML = '';
             try {
-                const deckCards = JSON.parse(state.game_state_deck.replace(/'/g, '"'));
+                const deckCards = safeParse(state.game_state_deck);
                 deckCards.forEach(card => {
                     const div = document.createElement('div');
                     div.className = 'list-item';
@@ -239,7 +252,7 @@
             const relics = document.getElementById('relics');
             relics.innerHTML = '';
             try {
-                const relicItems = JSON.parse(state.game_state_relics.replace(/'/g, '"'));
+                const relicItems = safeParse(state.game_state_relics);
                 relicItems.forEach(relic => {
                     const div = document.createElement('div');
                     div.className = 'list-item';
@@ -254,7 +267,7 @@
             const potions = document.getElementById('potions');
             potions.innerHTML = '';
             try {
-                const potionItems = JSON.parse(state.game_state_potions.replace(/'/g, '"'));
+                const potionItems = safeParse(state.game_state_potions);
                 potionItems.forEach(potion => {
                     const div = document.createElement('div');
                     div.className = 'list-item';
@@ -265,7 +278,54 @@
                 console.error("Error parsing potions:", e);
             }
         }
+        
+        // Function to label the choice and send data to the backend
+        function labelChoice(id, choice) {
+            fetch('/label_choice', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: id, choice: choice }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(`Failed to label choice: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error labeling choice:', error);
+            });
+        }
 
+        // Function to highlight the selected choice
+        function highlightSelectedChoice(selectedDiv) {
+            // Remove the highlight from all choices
+            const allChoices = document.querySelectorAll('#choice_list .list-item');
+            allChoices.forEach(choice => choice.classList.remove('highlight-green'));
+
+            // Add highlight to the selected choice
+            selectedDiv.classList.add('highlight-green');
+        }
+
+        function previousStep() {
+            const stepInput = document.getElementById('stepInput');
+            let currentStep = parseInt(stepInput.value);
+            if (currentStep > 0) {
+                stepInput.value = currentStep - 1;
+                displayState();
+            }
+        }
+
+        function nextStep() {
+            const stepInput = document.getElementById('stepInput');
+            let currentStep = parseInt(stepInput.value);
+            if (currentStep < allStates.length - 1) {
+                stepInput.value = currentStep + 1;
+                displayState();
+            }
+        }
     </script>
 </body>
 </html>
