@@ -21,7 +21,7 @@ with open('prompts/system_v2.txt', 'r') as file:
 with open('prompts/system_v3.txt', 'r') as file:
     system_prompt_v3 = file.read()
 
-def get_text_v3(prompt, session_id, similar_states, human_test=False):
+def get_text_v3(prompt, session_id, similar_states, human_test=False, use_joe_advice=True):
     # Set up the client with helicone logging
     client = OpenAI(
         base_url="https://oai.hconeai.com/v1", 
@@ -88,7 +88,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             custom_file_name = "prompts/sub_prompts/neow.txt"
         else:
             custom_file_name = None
-        if custom_file_name:
+        if custom_file_name and use_joe_advice:
             with open(custom_file_name, 'r') as file:
                 joe_advice = file.read()
             if screen_type == "MAP":
@@ -140,6 +140,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
             gpt_response = client.chat.completions.create(
                 model=MODEL,
                 messages=current_messages,
+                temperature=0.1,
             )
             # Add the response to the current_messages
             current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
@@ -184,6 +185,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 gpt_response = client.chat.completions.create(
                     model=MODEL,
                     messages=zero_shot_messages,
+                    temperature=0.1,
                 )
                 zero_shot_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
                 #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
@@ -195,6 +197,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 zero_shot_response = client.chat.completions.create(
                     model=MODEL,
                     messages=zero_shot_messages,
+                    temperature=0.1,
                     #tools=tools,
                     #tool_choice="required"
                 )
@@ -218,6 +221,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 gpt_response = client.chat.completions.create(
                     model=MODEL,
                     messages=human_analysis_messages,
+                    temperature=0.1,
                 )
                 human_analysis_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
                 #current_messages.append({"role": "system", "content": gpt_response.choices[0].message.content})
@@ -228,6 +232,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 human_analysis_response = client.chat.completions.create(
                     model=MODEL,
                     messages=human_analysis_messages,
+                    temperature=0.1,
                     #tools=tools,
                     #tool_choice="required"
                 )
@@ -242,6 +247,7 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 joe_response = client.chat.completions.create(
                     model=MODEL,
                     messages=joe_messages,
+                    temperature=0.1,
                     #tools=tools,
                     #tool_choice="required"
                 )
@@ -262,7 +268,8 @@ def get_text_v3(prompt, session_id, similar_states, human_test=False):
                 model=MODEL,
                 messages=current_messages,
                 tools=tools,
-                tool_choice="required"
+                tool_choice="required",
+                temperature=0.1,
             )
             print("Gpt response: ", gpt_response)
             # Check that it's valid

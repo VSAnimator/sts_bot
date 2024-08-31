@@ -20,6 +20,7 @@ import shutil
 from pprint import pprint
 import copy
 import sys
+import dataset
 
 # Generic MCTS agent
 # Can be used with different decision and lookahead policies
@@ -92,8 +93,8 @@ def random_action(parsed_state, chosen_options = []):
     return chosen_option
 
 # MCTS parameters
-mcts_depth = 2
-mcts_samples = 2
+mcts_depth = 4
+mcts_samples = 4
 last_mcts_floor = 0
 
 # Run inference
@@ -107,6 +108,17 @@ class MctsState:
 
 mcts_state = MctsState()
 
+db = dataset.connect('sqlite:///labeling.db')
+
+state_table = db['states']
+
+def map_query(parsed_state):
+    # Query the database for the path taken
+    query = f"SELECT * FROM states WHERE game_state_floor={parsed_state['game_state']['floor']} AND timestamp='{game_seed}' and game_state_screen_type='MAP'"
+    result = db.query(query)
+    states = list(result)
+    return states[0]['bot_response']
+
 # The policy used for MCTS lookaheads
 def lookahead_policy(parsed_state):
     global last_lookahead_response, mcts_state
@@ -118,7 +130,18 @@ def lookahead_policy(parsed_state):
         if mcts_state.curr_command == "":
             chosen_option = random_action(parsed_state, list(mcts_state.leaf_states.keys()))
         else:
-            chosen_option = random_action(parsed_state)
+            # Handle pathing decisions separately
+            if parsed_state['game_state']['screen_type'] == "MAP":
+                # Query the database for the path taken
+                chosen_option = map_query(parsed_state)
+                # Check to make sure the chosen option is valid
+                all_options = get_all_options(parsed_state)
+                if chosen_option not in all_options:
+                    print("INVALID MAP CHOICE")
+                    #input("Continue?")
+                    chosen_option = random_action(parsed_state)
+            else:
+                chosen_option = random_action(parsed_state)
     return chosen_option, random
 
 # Next command to issue for the MCTS search
