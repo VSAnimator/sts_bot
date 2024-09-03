@@ -6,6 +6,7 @@ import os
 from groq import Groq
 from wiki_info import get_relic_by_name, get_card_by_name
 import copy
+import uuid
 
 MODEL = 'gpt-4o' #'llama3-70b-8192'
 
@@ -742,3 +743,137 @@ def value_decision(prompt, leaf_states, session_id):
     else:
         print("Invalid response")
         return np.random.choice(all_options)
+    
+def get_best_state_v1(prompt_states, session_id):
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"{session_id}"
+        }
+    )
+
+    # For every state in prompt_states, create a random index
+    # Create random alphanumeric index for each state
+    prompt_states = {str(uuid.uuid4()): state for state in prompt_states}
+
+    prompt = "Here is a dictionary of states reached by a tree search: " + str(prompt_states) + "\n" + "Analyze each of these slay the spire states. Use 5 lines to analyze each state. Describe each state independently from the others."
+
+    current_messages = [
+        {"role": "system", "content": [{"type": "text", "text": system_prompt_v3}]},
+        #{"role": "system", "content": system_prompt_custom},
+        {"role": "user", "content": [{"type": "text", "text": prompt}]}
+        #{"role": "user", "content": prompt}
+    ]
+
+    gpt_response = client.chat.completions.create(
+        model=MODEL,
+        messages=current_messages,
+    )
+
+    # Add the response to the current_messages
+    current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+
+    prompt = "Reason about the state that is the most likely to lead to a winning run. Provide succint reasoning."
+    current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+
+    choice_tool = {
+        "type": "function",
+        "function": {
+            "name": "choose_best_state",
+            "description": "Choose the state with the highest win probability",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reasoning": {
+                        "type": "string",
+                        "description": "A succint (2-sentence) explanation of why the state was chosen"
+                    },
+                    "best_state": {
+                        "type": "string",
+                        "description": "The key of the state with the highest win probability",
+                        "enum": list(prompt_states.keys())
+                    }
+                },
+                "required": ["reasoning", "best_state"]
+            }
+        }
+    }
+
+    gpt_response = client.chat.completions.create(
+        model=MODEL,
+        messages=current_messages,
+        tools=[choice_tool],
+        tool_choice="required"
+    )
+
+    return prompt_states[ast.literal_eval(gpt_response.choices[0].message.tool_calls[0].function.arguments)['best_state']]
+
+def get_best_state(prompt_states, session_id):
+    client = OpenAI(
+        base_url="https://oai.hconeai.com/v1", 
+        default_headers={ 
+            "Helicone-Auth": f"Bearer {os.environ['HELICONE_API_KEY']}",
+            "Helicone-Property-Session": f"{session_id}"
+        }
+    )
+
+    system_prompt = "You are a superhuman AI evaluating the relative win probability of different leaf states from a monte carlo tree search of Slay the Spire. Each leaf state is reached by following a standard rollout policy after the current decision. " 
+
+    # For every state in prompt_states, create a random index
+    # Create random alphanumeric index for each state
+    prompt_states = {str(uuid.uuid4()): state for state in prompt_states}
+
+    prompt = "Here is a dictionary of states reached by a tree search: " + str(prompt_states) + "\n" + "For each state, evaluate the deck and relics in the context of the current game state (Ascension, Floor, Boss, etc.) along the following dimensions: attack, defense, scaling, synergies, card draw. Return a 1-2 sentence evaluation for each dimension."
+
+    current_messages = [
+        {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+        #{"role": "system", "content": system_prompt_custom},
+        {"role": "user", "content": [{"type": "text", "text": prompt}]}
+        #{"role": "user", "content": prompt}
+    ]
+
+    gpt_response = client.chat.completions.create(
+        model=MODEL,
+        messages=current_messages,
+        temperature=0.1,
+    )
+
+    # Add the response to the current_messages
+    current_messages.append({"role": "assistant", "content": [{"type": "text", "text": gpt_response.choices[0].message.content}]})
+
+    prompt = "Given this evaluation, which of the states has the maximum chances of winning? Give an 1-2 sentence explanation for your choice"
+    current_messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+
+    choice_tool = {
+        "type": "function",
+        "function": {
+            "name": "choose_best_state",
+            "description": "Choose the state with the highest win probability",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reasoning": {
+                        "type": "string",
+                        "description": "A 1-2 sentence explanation of why the state was chosen"
+                    },
+                    "best_state": {
+                        "type": "string",
+                        "description": "The key of the state with the highest win probability",
+                        "enum": list(prompt_states.keys())
+                    }
+                },
+                "required": ["reasoning", "best_state"]
+            }
+        }
+    }
+
+    gpt_response = client.chat.completions.create(
+        model=MODEL,
+        messages=current_messages,
+        tools=[choice_tool],
+        tool_choice="required",
+        temperature=0.1,
+    )
+
+    return prompt_states[ast.literal_eval(gpt_response.choices[0].message.tool_calls[0].function.arguments)['best_state']]

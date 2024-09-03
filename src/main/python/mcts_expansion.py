@@ -21,6 +21,7 @@ from pprint import pprint
 import copy
 import sys
 import dataset
+import traceback
 
 # Generic MCTS agent
 # Can be used with different decision and lookahead policies
@@ -93,7 +94,7 @@ def random_action(parsed_state, chosen_options = []):
     return chosen_option
 
 # MCTS parameters
-mcts_depth = 4
+mcts_depth = 2
 mcts_samples = 4
 last_mcts_floor = 0
 
@@ -119,6 +120,20 @@ def map_query(parsed_state):
     states = list(result)
     return states[0]['bot_response']
 
+def floor_query(parsed_state):
+    query = f"SELECT * FROM states WHERE game_state_floor={parsed_state['game_state']['floor']} AND timestamp='{game_seed}'"
+    result = db.query(query)
+    states = list(result)
+    #print("States", states)
+    # Now filter down to wherever the options are the same as the options in the parsed state
+    for state in states:
+        all_options = get_all_options(parsed_state)
+        if str(sorted(all_options)) == str(sorted(ast.literal_eval(state['game_state_choice_list']))):
+            return state['bot_response']
+    return None
+
+copy_actions = True
+
 # The policy used for MCTS lookaheads
 def lookahead_policy(parsed_state):
     global last_lookahead_response, mcts_state
@@ -141,7 +156,13 @@ def lookahead_policy(parsed_state):
                     #input("Continue?")
                     chosen_option = random_action(parsed_state)
             else:
-                chosen_option = random_action(parsed_state)
+                if copy_actions:
+                    # We need to copy whatever action was taken in the database
+                    chosen_option = floor_query(parsed_state)
+                    if chosen_option is None:
+                        chosen_option = random_action(parsed_state)
+                else:
+                    chosen_option = random_action(parsed_state)
     return chosen_option, random
 
 # Next command to issue for the MCTS search
@@ -258,6 +279,7 @@ def next_mcts_command(sock, received_message, log_file, mcts_file):
 
     except Exception as e:
         print(f"Exception in next_mcts_command: {e}")
+        print(traceback.format_exc())
         return "Game over"
 
 def create_seed():
