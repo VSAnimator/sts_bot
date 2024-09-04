@@ -1,7 +1,7 @@
 import gymnasium as gym
 import copy
 
-env = gym.make("Acrobot-v1")
+env = gym.make("MountainCar-v0")#, render_mode="human")
 observation, info = env.reset()
 
 for _ in range(1000):

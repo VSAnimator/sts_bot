@@ -3,7 +3,7 @@ import time
 import select
 import sys
 
-HOST_IP = "127.0.0.1"
+HOST_IP = "localhost" #"127.0.0.1"
 PORT = 8080
 TIMEOUT_THRESHOLD = 1000
 
@@ -17,7 +17,7 @@ def main():
         return
 
     # Send the initial message
-    initial_message = "load startstates/4ZNJ22MUNT7DX/06/saves/IRONCLAD.autosave"
+    initial_message = "load startstates/16WD26I7SSRI1/40/saves/IRONCLAD.autosave"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

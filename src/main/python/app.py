@@ -9,7 +9,7 @@ db = dataset.connect('sqlite:///labeling.db')
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index_value.html')
 
 @app.route('/get_states', methods=['GET'])
 def get_states():
@@ -90,17 +90,21 @@ def get_filenames():
     # Get the unique values from the 'timestamp' column in the 'states' table
     filenames = db.query('SELECT DISTINCT timestamp FROM states')
     return jsonify([f['timestamp'] for f in filenames])
-    '''
-    # Assuming the folder path is 'timestamps_folder'
-    folder_path = 'valid_folders_archive'
-    try:
-        # Get list of filenames in the folder
-        onlyfiles = [f for f in listdir(folder_path) if not isfile(join(folder_path, f))]
-        # Optionally, filter or sort the filenames as needed
-        return jsonify(onlyfiles)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    '''
+
+@app.route('/get_state_sets', methods=['GET'])
+def get_state_sets():
+    # Return the names of the available sets
+    return jsonify([0,1,2,3])
+
+@app.route('/get_compared_states', methods=['GET'])
+def get_compared_states():
+    # Get the index of the set to fetch
+    set_index = request.args.get('set_index', type=int)
+    if set_index is not None and 0 <= set_index < len(state_sets):
+        # Return the corresponding set of states
+        return jsonify(state_sets[set_index]['states'])
+    else:
+        return jsonify({'error': 'Invalid set index provided.'})
 
 if __name__ == '__main__':
     app.run(debug=True)

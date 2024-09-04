@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slay the Spire State Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container {
+            width: 90%; /* Adjust as necessary for page width */
+            margin: auto;
+        }
+        .viewer-layout {
+            display: flex;
+            gap: 20px; /* Space between the two columns */
+        }
+        .main-content {
+            flex: 3; /* Takes up 2/3 of the space */
+        }
+        .map-container {
+            flex: 1; /* Takes up 1/3 of the space */
+        }
+        h1, h2 { text-align: center; }
+        .section { margin: 20px 0; }
+        .list { display: flex; flex-wrap: wrap; }
+        .list-item { margin: 5px 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .highlight-blue { background-color: lightblue; }
+        .highlight-red { background-color: lightcoral; }
+        .highlight-green { background-color: lightgreen; }
+        .key-info-container {
+            display: flex;
+            gap: 20px; /* Space between columns */
+        }
+
+        .column {
+            flex: 1; /* Each column takes equal space */
+        }
+
+        .comparison-container {
+            display: flex;
+            gap: 20px; /* Space between compared states */
+            overflow-x: auto; /* Allow horizontal scrolling if many states are added */
+        }
+
+        .comparison-card {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .highlight-green {
+            background-color: lightgreen !important; /* Ensure highlighting works */
+            border: 2px solid #008000; /* Optional: green border to emphasize selection */
+        }
+
+        .ranking-container {
+            display: flex;
+            gap: 5px; /* Space between ranking buttons */
+            margin-top: 10px;
+        }
+
+        .ranking-button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            transition: background-color 0.3s ease; /* Smooth transition */
+        }
+
+        .ranking-button:hover {
+            background-color: #e0e0e0; /* Slightly darker on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Slay the Spire State Viewer</h1>
+        <div class="section">
+            <h2>Compare States</h2>
+            <div id="comparison-container" class="comparison-container"></div>
+        </div>
+        <div class="section">
+            <label for="setSelector">Select State Set:</label>
+            <select id="setSelector" onchange="currentSetIndex = this.value; fetchComparedStates();"></select>
+            <button onclick="loadPreviousSet()">Previous Set</button>
+            <button onclick="loadNextSet()">Next Set</button>
+        </div>
+
+        <div class="viewer-layout">
+            <!-- Left Column: Main Content -->
+            <div class="main-content">
+                <div class="section">
+                    <label for="timestampInput">Select seed:</label>
+                    <select id="timestampInput"></select>
+                    <button onclick="loadStates()">Load Trajectory</button>
+                </div>
+    
+                <div class="section">
+                    <h2>Key Information</h2>
+                    <div class="key-info-container">
+                        <div class="column">
+                            <p><strong>Class:</strong> <span id="class">N/A</span></p>
+                            <p><strong>Ascension Level:</strong> <span id="ascension_level">N/A</span></p>
+                            <p><strong>Current HP:</strong> <span id="current_hp">N/A</span> / <span id="max_hp">N/A</span></p>
+                            <p><strong>Gold:</strong> <span id="gold">N/A</span></p>
+                            <p><strong>Floor:</strong> <span id="floor">N/A</span></p>
+                            <p><strong>Act Boss:</strong> <span id="act_boss">N/A</span></p>
+                        </div>
+                        <div class="column">
+                            <p><strong>Event ID:</strong> <span id="event_id">N/A</span></p>
+                            <p><strong>Screen Type:</strong> <span id="screen_type">N/A</span></p>
+                            <div id="next_node_info"></div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="section">
+                    <h2>Deck</h2>
+                    <div class="list" id="deck"></div>
+                </div>
+    
+                <div class="section">
+                    <h2>Relics</h2>
+                    <div class="list" id="relics"></div>
+                </div>
+    
+                <div class="section">
+                    <h2>Potions</h2>
+                    <div class="list" id="potions"></div>
+                </div>
+            </div>
+    
+            <!-- Right Column: Map -->
+            <div class="map-container">
+                <h2>Map</h2>
+                <canvas id="mapCanvas" width="400" height="800" style="border:1px solid #000;"></canvas>
+            </div>
+        </div>
+    </div>    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fetch available filenames for timestamps and populate the dropdown
+            fetch('/get_filenames')
+                .then(response => response.json())
+                .then(filenames => {
+                    const timestampDropdown = document.getElementById('timestampInput');
+                    filenames.forEach(filename => {
+                        const option = document.createElement('option');
+                        option.value = filename;
+                        option.textContent = filename;
+                        timestampDropdown.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching filenames:', error));
+        });
+
+        let allStates = [];
+
+        function loadStates() {
+            const timestamp = document.getElementById('timestampInput').value;
+            fetch(`/get_states?timestamp=${timestamp}`)
+                .then(response => response.json())
+                .then(states => {
+                    if (states.error) {
+                        alert(states.error);
+                    } else {
+                        allStates = states;
+                        alert("Trajectory loaded. Enter a step id to display a specific state.");
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function displayState() {
+            const stepId = parseInt(document.getElementById('stepInput').value);
+            if (stepId >= 0 && stepId < allStates.length) {
+                const state = allStates[stepId];
+                updateStateView(state);
+            } else {
+                alert("Invalid step id. Please enter a value between 0 and " + (allStates.length - 1));
+            }
+        }
+
+        // Utility function to safely parse JSON-like strings
+        function safeParse(input) {
+            try {
+                // Escape single quotes and double quotes
+                const jsonString = input
+                    .replace(/'/g, '\''); // Escape single quotes
+
+                console.log(jsonString);
+
+                // Convert the cleaned-up string to JSON
+                return JSON.parse(jsonString);
+            } catch (e) {
+                console.error("Error parsing JSON-like string:", e);
+                return []; // Return empty array on failure
+            }
+        }
+
+        function updateStateView(state) {
+            console.log(state);
+            const labeledChoice = state.label ? state.label.toLowerCase() : null;
+
+            const botAction = state.bot_response ? state.bot_response.split(' ') : null;
+            const botCommand = botAction ? botAction[0] : null;
+            const botChoice = botAction ? botAction.slice(1).join(' ').toLowerCase() : null;
+            const bestAction = state.best_action ? state.best_action.split(' ') : null;
+            const bestCommand = bestAction ? bestAction[0] : null;
+            var bestChoice = bestAction ? bestAction.slice(1).join(' ') : null;
+            bestChoice = bestCommand === "choose" ? bestChoice.toLowerCase() : (state.best_action ? state.best_action.toLowerCase() : null);
+            const rating = parseInt(state.rating ? state.rating : 0);
+
+            // Update key information
+            document.getElementById('class').textContent = state.game_state_class;
+            document.getElementById('ascension_level').textContent = state.game_state_ascension_level;
+            document.getElementById('current_hp').textContent = state.game_state_current_hp;
+            document.getElementById('max_hp').textContent = state.game_state_max_hp;
+            document.getElementById('gold').textContent = state.game_state_gold;
+            document.getElementById('floor').textContent = state.game_state_floor;
+            document.getElementById('act_boss').textContent = state.game_state_act_boss;
+            document.getElementById('event_id').textContent = state.event_id || 'N/A';
+            document.getElementById('screen_type').textContent = state.game_state_screen_type || 'N/A';
+
+            // Update next node information
+            const nextNodeInfoContainer = document.getElementById('next_node_info');
+            nextNodeInfoContainer.innerHTML = ''; // Clear previous entries
+            Object.keys(state).forEach(key => {
+                if ((key.startsWith('next_node_info_x=') || key.startsWith('next_nodes')) && state[key] !== null) {
+                    const p = document.createElement('p');
+                    p.innerHTML = `<strong>${key}:</strong> ${state[key]}`;
+                    nextNodeInfoContainer.appendChild(p);
+                }
+            });
+
+            // Update deck
+            const deck = document.getElementById('deck');
+            deck.innerHTML = '';
+            try {
+                const deckCards = safeParse(state.game_state_deck);
+                deckCards.forEach(card => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.textContent = card;
+                    deck.appendChild(div);
+                });
+            } catch (e) {
+                console.error("Error parsing deck:", e);
+            }
+
+            // Update relics
+            const relics = document.getElementById('relics');
+            relics.innerHTML = '';
+            try {
+                const relicItems = safeParse(state.game_state_relics);
+                relicItems.forEach(relic => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.textContent = relic;
+                    relics.appendChild(div);
+                });
+            } catch (e) {
+                console.error("Error parsing relics:", e);
+            }
+
+            // Update potions
+            const potions = document.getElementById('potions');
+            potions.innerHTML = '';
+            try {
+                const potionItems = safeParse(state.game_state_potions);
+                potionItems.forEach(potion => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.textContent = potion;
+                    potions.appendChild(div);
+                });
+            } catch (e) {
+                console.error("Error parsing potions:", e);
+            }
+
+            drawMap(JSON.parse(state.map), JSON.parse(state.current_node));
+        }
+        
+        // Function to label the choice and send data to the backend
+        function labelChoice(id, choice) {
+            fetch('/label_choice', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: id, choice: choice }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(`Failed to label choice: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error labeling choice:', error);
+            });
+        }
+
+        // Function to highlight the selected choice
+        function highlightSelectedChoice(selectedDiv) {
+            // Remove the highlight from all choices
+            const allChoices = document.querySelectorAll('#choice_list .list-item');
+            allChoices.forEach(choice => choice.classList.remove('highlight-green'));
+
+            // Add highlight to the selected choice
+            selectedDiv.classList.add('highlight-green');
+        }
+
+        const nodeSize = 30; // Increased node size to space out nodes more
+        const offsetX = 50;
+        const offsetY = 700; // Adjust this value to place the flipped map correctly
+        const spacingMultiplier = 1.5; // Increased spacing between nodes
+
+        function drawMap(mapData, current_node) {
+            const canvas = document.getElementById('mapCanvas');
+            if (!canvas) {
+                console.error('Canvas element not found');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+
+            // Clear the canvas before drawing a new map
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw lines connecting parent nodes to their children
+            mapData.forEach(node => {
+                node.children.forEach(child => {
+                    ctx.beginPath();
+                    ctx.moveTo(
+                        node.x * nodeSize * spacingMultiplier + offsetX, 
+                        -node.y * nodeSize * spacingMultiplier + offsetY
+                    ); // Flipped Y-direction
+                    ctx.lineTo(
+                        child.x * nodeSize * spacingMultiplier + offsetX, 
+                        -child.y * nodeSize * spacingMultiplier + offsetY
+                    ); // Flipped Y-direction
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                });
+            });
+
+            // Draw nodes
+            mapData.forEach(node => {
+                ctx.beginPath();
+                ctx.arc(
+                    node.x * nodeSize * spacingMultiplier + offsetX, 
+                    -node.y * nodeSize * spacingMultiplier + offsetY, 
+                    nodeSize / 2, 
+                    0, 
+                    2 * Math.PI
+                ); // Flipped Y-direction
+                
+                // Check if the current node is the one to be highlighted
+                if (node.x === current_node.x && node.y === current_node.y) {
+                    ctx.fillStyle = '#ff0'; // Highlight color (yellow)
+                    ctx.strokeStyle = '#f00'; // Highlight border color (red)
+                    ctx.lineWidth = 3;
+                } else {
+                    ctx.fillStyle = '#fff'; // Regular node color
+                    ctx.strokeStyle = '#000'; // Regular border color
+                    ctx.lineWidth = 2;
+                }
+
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(
+                    node.symbol, 
+                    node.x * nodeSize * spacingMultiplier + offsetX, 
+                    -node.y * nodeSize * spacingMultiplier + offsetY
+                ); // Flipped Y-direction
+            });
+        }
+
+        let comparedStates = [];
+
+        let currentSetIndex = 0; // To track the current set of states being displayed
+        let totalSets = 0; // Total number of state sets available
+
+        // Fetch available sets of states from the backend on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/get_state_sets')
+                .then(response => response.json())
+                .then(stateSets => {
+                    totalSets = stateSets.length;
+                    const setSelector = document.getElementById('setSelector');
+                    stateSets.forEach((setName, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = setName;
+                        setSelector.appendChild(option);
+                    });
+                    // Automatically load the first set
+                    fetchComparedStates();
+                })
+                .catch(error => console.error('Error fetching state sets:', error));
+        });
+
+        // Function to fetch compared states from the backend based on selected set index
+        function fetchComparedStates() {
+            updateSetSelector();
+            const setIndex = Number(document.getElementById('setSelector').value);
+            console.log("Set Index")
+            console.log(setIndex);
+            console.log(setIndex+4);
+            comparedStates = allStates.slice(setIndex*4,setIndex*4+4);
+            updateComparisonView();
+            return;
+            fetch(`/get_compared_states?set_index=${setIndex}`)
+                .then(response => response.json())
+                .then(states => {
+                    if (states.error) {
+                        alert(states.error);
+                    } else {
+                        comparedStates = states;
+                        updateComparisonView();
+                    }
+                })
+                .catch(error => console.error('Error fetching compared states:', error));
+        }
+
+        // Function to update the comparison view with clickable cards and unique rankings
+        function updateComparisonView() {
+            const container = document.getElementById('comparison-container');
+            container.innerHTML = ''; // Clear previous compared states
+
+            const availableRanks = Array.from({ length: comparedStates.length }, (_, i) => i + 1);
+
+            comparedStates.forEach((state, index) => {
+                const card = document.createElement('div');
+                card.className = 'comparison-card';
+
+                // Extract abbreviations from Deck, Relics, and Potions
+                const deckAbbrev = abbreviateItems(state.game_state_deck);
+                const relicsAbbrev = abbreviateItems(state.game_state_relics);
+                const potionsAbbrev = abbreviateItems(state.game_state_potions);
+
+                // Create ranking options dynamically based on available ranks
+                const rankingOptions = availableRanks.map(rank => `
+                    <option value="${rank}" ${state.rank === rank ? 'selected' : ''}>${rank}</option>
+                `).join('');
+
+                // Display key state information for comparison
+                card.innerHTML = `
+                    <p><strong>Option ID:</strong> ${index}</p>
+                    <p><strong>Deck:</strong> ${deckAbbrev}</p>
+                    <p><strong>Relics:</strong> ${relicsAbbrev}</p>
+                    <p><strong>Potions:</strong> ${potionsAbbrev}</p>
+                    <div class="ranking-container">
+                        <select class="ranking-select" onchange="rankState(${index}, this.value)">
+                            <option value="">Select Rank</option>
+                            ${rankingOptions}
+                        </select>
+                    </div>
+                `;
+
+                // Add click event to load the state into the main viewer
+                card.addEventListener('click', () => loadStateIntoViewer(state));
+
+                container.appendChild(card);
+            });
+        }
+
+        // Function to update the set selector to reflect the current set index
+        function updateSetSelector() {
+            const setSelector = document.getElementById('setSelector');
+            setSelector.value = currentSetIndex;
+        }
+
+        // Function to navigate to the previous set of states
+        function loadPreviousSet() {
+            if (currentSetIndex > 0) {
+                currentSetIndex--;
+                fetchComparedStates();
+            } else {
+                alert("This is the first set.");
+            }
+        }
+
+        // Function to navigate to the next set of states
+        function loadNextSet() {
+            if (currentSetIndex < totalSets - 1) {
+                currentSetIndex++;
+                fetchComparedStates();
+            } else {
+                alert("This is the last set.");
+            }
+        }
+
+        // Function to abbreviate items in lists (deck, relics, potions)
+        function abbreviateItems(itemsString) {
+            try {
+                const items = safeParse(itemsString);
+                return items.map(item => item.charAt(0).toUpperCase()).join('');
+            } catch (e) {
+                console.error("Error parsing items:", e);
+                return 'N/A'; // Fallback in case of error
+            }
+        }
+
+        // Function to load a clicked state from the comparison view into the main viewer
+        function loadStateIntoViewer(state) {
+            updateStateView(state);
+        }
+
+        // Function to rank a state, ensuring unique ranks across all states
+        function rankState(index, selectedRank) {
+            const rank = parseInt(selectedRank);
+
+            // Remove the rank from other states to ensure uniqueness
+            comparedStates.forEach((state, idx) => {
+                if (idx !== index && state.rank === rank) {
+                    state.rank = null; // Clear rank from other states
+                }
+            });
+
+            // Assign the selected rank to the current state
+            comparedStates[index].rank = rank;
+            updateComparisonView(); // Refresh the view to reflect rank changes
+        }
+
+
+    </script>
+</body>
+</html>

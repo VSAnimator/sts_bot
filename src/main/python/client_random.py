@@ -96,6 +96,8 @@ def send_message_func(sock, received_message, log_file, raw_log_file):
     if "autoplay" in parsed_state['available_commands']:
         chosen_option = "autoplay"
         autoplay_count += 1
+    print(f"Chosen option: {chosen_option}")
+    chosen_option = input("Enter your choice: ")
     response = chosen_option
     message_count += 1
     encoded_message = response.encode('utf-8')
@@ -125,7 +127,7 @@ def main():
         return
 
     # Send the initial message
-    initial_message = "state" #"start ironclad 10"
+    initial_message = "load startstates/16WD26I7SSRI1/05/saves/IRONCLAD.autosave"
     encoded_message = initial_message.encode('utf-8')
     sock.sendall(len(encoded_message).to_bytes(4, byteorder='big'))
     sock.sendall(encoded_message)

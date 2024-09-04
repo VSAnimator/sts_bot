@@ -29,8 +29,8 @@ for elem in filenames:
 '''
 
 def get_mcts_seed_floor(seed, floor):
-    #elem_path = "/Users/sarukkai/Downloads/mcts_agent_runs_v1/" + seed + "/leaf_states_" + str(floor) + ".txt"
-    elem_path = "./mcts_agent_runs/" + seed + "/leaf_states_" + str(floor) + ".txt"
+    elem_path = "/Users/sarukkai/Downloads/mcts_agent_runs_16floor/" + seed + "/leaf_states_" + str(floor) + ".txt"
+    #elem_path = "./mcts_agent_runs/" + seed + "/leaf_states_" + str(floor) + ".txt"
     # Check if file exists
     if not os.path.exists(elem_path):
         return {}
